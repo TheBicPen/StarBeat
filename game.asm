@@ -39,10 +39,14 @@
 .eqv 	FRAME_BUFFER	0x10008000
 .eqv 	INPUT_BUFFER	0xffff0000
 
-.eqv	AUDIO_DURATION	180	# length of a single note in milliseconds
+.eqv	AUDIO_DURATION	200	# length of a single note in milliseconds
 .eqv	INSTRUMENT	81	# MIDI instrument to play notes with
 .eqv	AUDIO_VOLUME	100
-.eqv	SLEEP_AFTER_NOTE	180	# time between notes/frames
+#.eqv	SLEEP_AFTER_NOTE	180	# time between notes/frames
+# Use frame-based delay for notes - realtime syscalls are expensive
+.eqv	FRAME_DELAY	5	# sleep between  - 200fps
+.eqv	FRAMES_PER_NOTE	15	# How many frames there are per note - delay should be ~100ms
+
 .eqv	SONG1_LENGTH	64	# number of notes in song1
 
 .eqv	OBJECT_SPEED	5
@@ -112,10 +116,15 @@ obstacle_locations:	.byte	0:16	# up to 8 objects on screen, all with x,y coordin
 
 ## Saved registers for main:
 # s0: music note index
-# s1: 
-
+# s1: frame count
+# s4: reserved for functions (listed below)
+# s5: reserved for functions (listed below)
 # s6: ship X coordinate
 # s7: ship Y coordinate
+
+# Functions that may use s4:
+# - handle_input: saves return address
+# Functions that may use s5:
 
 main:
 	# test
@@ -131,10 +140,16 @@ main:
 	jal clear_screen
 	li $s6, 10		# init ship X 
 	li $s7, 40		# init ship Y
+
+	# draw ship at initial position
+	move $a0, $s6
+	move $a1, $s7
+	move $a2, $zero
+	jal draw_ship
+	
 	li $s0, 0 		# init note index iterator
 	#li $s1, SONG1_LENGTH	# store song length constant
-	li $a0, 1000		# Pause to let MARS load the simulator
-	jal pause
+	jal pause		# Pause to let MARS load the simulator
 loop:
 	# check for key input and handle it if necessary
 	li $t9, INPUT_BUFFER 
@@ -142,20 +157,27 @@ loop:
 	bne $t8, 1, loop_music
 	lw $a0, 4($t9) 			# this assumes $t9 is set to 0xfff0000 from before
 	jal handle_input
+	
+
 
 loop_music:		
 	# Play notes of song
-	#bge $s0, SONG1_LENGTH, end	# terminate once song finishes
-	blt $s0, SONG1_LENGTH, loop_music_continue 	# continue playing music
-	move $s0, $zero		# reset to start of song
+	#bge $s0, SONG1_LENGTH, end			# terminate once song finishes
+	blt $s1, FRAMES_PER_NOTE, loop_end		# don't play note if enough frames haven't passed
+	move $s1, $zero					# reset frame counter
+	blt $s0, SONG1_LENGTH, loop_music_continue 	# play next note - don't reset to start 
+	move $s0, $zero					# reset to start of song
 loop_music_continue:
+	# play a note from the song
 	lb $a0, song1($s0)		# load note
-	beqz $a0, loop_end
+	beqz $a0, loop_empty_note
 	jal play_single_note		# play note if pitch is not 0
+loop_empty_note:
+	addi $s0, $s0, 1		# increment note index
 loop_end:
 	# do miscellaneous end-of-loop tasks
 	jal pause 		# pause until next frame
-	addi $s0, $s0, 1	# increment note index
+	addi $s1, $s1, 1	# increment frame counter
 	j loop			# keep looping
 	
 end:	li $v0, 10 		# terminate the program gracefully
@@ -165,7 +187,7 @@ end:	li $v0, 10 		# terminate the program gracefully
 
 # pause between notes.
 pause:
-	li $a0, SLEEP_AFTER_NOTE
+	li $a0, FRAME_DELAY
 	li $v0, 32
 	syscall
 	jr $ra
@@ -249,17 +271,7 @@ ship_move_up:
 handle_input_return:
 	jr $ra
 
-		
-		
-respond_to_a: # temp - needs rewrite
-	move $a0, $s2	# move x coord into a0 for draw call
-	move $a1, $s3	# move y into a1 for draw call
-	move $a2, $zero	# draw
-	push_stack ($ra)
-	jal draw_enemy1	# draw enemy at x,y
-	addi $s2, $s2, 1	# increment x coord
-	pop_stack ($ra)	# restore return address
-	jr $ra		# jump to return
+######## Functions - call these with jal
 
 
 clear_screen:
