@@ -26,7 +26,7 @@
 # -(insert YouTube / MyMedia / other URL here). Make sure we can view it!
 #
 # Are you OK with us sharing the video with people outside course staff?
-# - yes, and please share this project github link as well! https://github.com/TheBicPen/CSCB58-Project
+# - yes, and please share this project github link as well! https://github.com/TheBicPen/CSCB58-Project (email me if I forget to make this public)
 #
 # Any additional information that the TA needs to know:
 # - Make sure your volume isn't too high before starting the game. There is sound.
@@ -42,7 +42,10 @@
 .eqv	AUDIO_DURATION	200	# length of a single note in milliseconds
 .eqv	INSTRUMENT	81	# MIDI instrument to play notes with
 .eqv	AUDIO_VOLUME	100
+
+# not used. see frame-delay below. TODO: use this for realtime note implementation
 #.eqv	SLEEP_AFTER_NOTE	180	# time between notes/frames
+
 # Use frame-based delay for notes - realtime syscalls are expensive
 .eqv	FRAME_DELAY	5	# sleep between  - 200fps
 .eqv	FRAMES_PER_NOTE	15	# How many frames there are per note - delay should be ~100ms
