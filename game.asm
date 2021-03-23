@@ -109,7 +109,16 @@ obstacle_locations:	.byte	0:16	# up to 8 objects on screen, all with x,y coordin
 
 .globl main
 
+
+## Saved registers for main:
+# s0: music note index
+# s1: 
+
+# s6: ship X coordinate
+# s7: ship Y coordinate
+
 main:
+	# test
 	#j test_instruments
 	li $t0, FRAME_BUFFER # $t0 stores the base address for display
 	li $t1, 0xff0000	# $t1 stores the red colour code
@@ -118,48 +127,36 @@ main:
 	sw $t1, 0($t0)		# paint the first (top-left) unit red. 
 	sw $t2, 4($t0)		# paint the second unit on the first row green. Why $t0+4?
 	sw $t3, 128($t0)	# paint the first unit on the second row blue. Why +128?
-
+	
 	jal clear_screen
-	li $a0, 29
-	li $a1, 62
-	jal draw_ship
-	
-	li $a0, 12
-	li $a1, 61
-	jal draw_enemy1
-		
-	li $a0, 5
-	li $a1, 4
-	jal draw_enemy2
-		
-	li $a0, 10
-	li $a1, 3
-	jal draw_enemy3
-	
-	li $s0, 0 # init note index iterator
+	li $s6, 10		# init ship X 
+	li $s7, 40		# init ship Y
+	li $s0, 0 		# init note index iterator
+	#li $s1, SONG1_LENGTH	# store song length constant
+	li $a0, 1000		# Pause to let MARS load the simulator
 	jal pause
 loop:
-	# get key input
+	# check for key input and handle it if necessary
 	li $t9, INPUT_BUFFER 
 	lw $t8, 0($t9)
-	bne $t8, 1, no_input
-handle_input:
-	lw $t2, 4($t9) 			# this assumes $t9 is set to 0xfff0000 from before
-	bne $t2, 0x61, no_input		# ASCII code of 'a' is 0x61 or 97 in decimal
-	jal respond_to_a
-	
-no_input:		
+	bne $t8, 1, loop_music
+	lw $a0, 4($t9) 			# this assumes $t9 is set to 0xfff0000 from before
+	jal handle_input
+
+loop_music:		
 	# Play notes of song
-	li $s1, SONG1_LENGTH
-	bge $s0, $s1, end
-	lb $a0, song1($s0)	# load note
-	beqz $a0, loop_no_note
-	jal play_single_note	# play note if pitch is not 0
-loop_no_note:
+	#bge $s0, SONG1_LENGTH, end	# terminate once song finishes
+	blt $s0, SONG1_LENGTH, loop_music_continue 	# continue playing music
+	move $s0, $zero		# reset to start of song
+loop_music_continue:
+	lb $a0, song1($s0)		# load note
+	beqz $a0, loop_end
+	jal play_single_note		# play note if pitch is not 0
+loop_end:
+	# do miscellaneous end-of-loop tasks
 	jal pause 		# pause until next frame
-	addi $s0, $s0, 1
-	
-	j loop	
+	addi $s0, $s0, 1	# increment note index
+	j loop			# keep looping
 	
 end:	li $v0, 10 		# terminate the program gracefully
 	syscall
@@ -173,9 +170,87 @@ pause:
 	syscall
 	jr $ra
 
-
-
+# params: $a0: key input, $s6: ship X, $s7: ship Y
+# s6 and s7 are treated as globals that may be mutated by this function
+handle_input:
+	beq $a0, 0x61, ship_move_left		# ASCII code of 'a' is 0x61 or 97 in decimal
+	beq $a0, 0x73, ship_move_down		# ASCII code of 's'
+	beq $a0, 0x77, ship_move_up		# ASCII code of 'w'
+	beq $a0, 0x64, ship_move_right		# ASCII code of 'd'
 	
+ship_move_left:
+	blez $s6, handle_input_return	# if ship at left edge, pass
+	push_stack ($ra)	# save return address pointer
+	# undraw ship at current position
+	move $a0, $s6		# move x into param 1
+	move $a1, $s7		# move y into param 2
+	move $a2, $s6		# move True into param 3: undraw
+	jal draw_ship
+	# draw ship at new position
+	addi $s6, $s6, -1	# update global coords
+	move $a0, $s6		# move updated x into param 1
+	move $a1, $s7		# move y back into param 2
+	move $a2, $zero		# move False into param 3: undraw
+	jal draw_ship
+	pop_stack ($ra)
+	jr $ra
+	
+ship_move_right:
+	bge $s6, 29, handle_input_return	# if ship at right edge, pass
+	push_stack ($ra)	# save return address pointer
+	# undraw ship at current position
+	move $a0, $s6		# move x into param 1
+	move $a1, $s7		# move y into param 2
+	li $a2, 1		# move True into param 3: undraw
+	jal draw_ship
+	# draw ship at new position
+	addi $s6, $s6, 1	# update global coords
+	move $a0, $s6		# move updated x into param 1
+	move $a1, $s7		# move y back into param 2
+	move $a2, $zero		# move False into param 3: undraw
+	jal draw_ship
+	pop_stack ($ra)
+	jr $ra
+	
+ship_move_down:
+	bge $s7, 62, handle_input_return	# if ship at lower edge, pass
+	push_stack ($ra)	# save return address pointer
+	# undraw ship at current position
+	move $a0, $s6		# move x into param 1
+	move $a1, $s7		# move y into param 2
+	li $a2, 1		# move True into param 3: undraw
+	jal draw_ship
+	# draw ship at new position
+	addi $s7, $s7, 1	# update global coords
+	move $a0, $s6		# move x coord back to $a0
+	move $a1, $s7		# move updated y into param 2
+	move $a2, $zero		# move False into param 3: undraw
+	jal draw_ship
+	pop_stack ($ra)
+	jr $ra
+	
+ship_move_up:
+	blez $s7, handle_input_return	# if ship at upper edge, pass
+	push_stack ($ra)	# save return address pointer
+	# undraw ship at current position
+	move $a0, $s6		# move x into param 1
+	move $a1, $s7		# move y into param 2
+	li $a2, 1		# move True into param 3: undraw
+	jal draw_ship
+	# draw ship at new position
+	addi $s7, $s7, -1	# update global coords
+	move $a0, $s6		# move x coord back to $a0
+	move $a1, $s7		# move updated y into param 2
+	move $a2, $zero		# move False into param 3: undraw
+	jal draw_ship
+	pop_stack ($ra)
+	jr $ra
+	
+handle_input_return:
+	jr $ra
+
+		
+		
 respond_to_a: # temp - needs rewrite
 	move $a0, $s2	# move x coord into a0 for draw call
 	move $a1, $s3	# move y into a1 for draw call
