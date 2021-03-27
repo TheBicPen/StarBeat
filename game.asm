@@ -17,7 +17,7 @@
 #
 # Which approved features have been implemented for milestone 4?
 # (See the assignment handout for the list of additional features)
-# 1. (fill in the feature, if any)
+# 1. Music loop
 # 2. (fill in the feature, if any)
 # 3. (fill in the feature, if any)
 #... (add more if necessary)
@@ -48,12 +48,11 @@
 
 # Use frame-based delay for notes - realtime syscalls are expensive
 .eqv	FRAME_DELAY	5	# sleep between  - 200fps
-.eqv	FRAMES_PER_NOTE	15	# How many frames there are per note - delay should be ~100ms
+.eqv	FRAMES_PER_NOTE	25	# How many frames there are per note - delay should be ~100ms
 
 .eqv	SONG1_LENGTH	64	# number of notes in song1
 
-.eqv	OBJECT_SPEED	5
-.eqv	PLAYER_SPEED	7
+.eqv	OBJECT_SPEED	2
 
 .eqv	SHIP_COLOUR1	0x0000bb
 .eqv	SHIP_COLOUR2	0x888888
@@ -67,10 +66,13 @@
 .data
 # Short song loop - simplified version of https://onlinesequencer.net/634591
 # store the pitch only. 0 indicates no note played
-song1:	.byte  59, 54, 47, 54, 54, 49, 0, 49, 55, 50, 43, 50, 60, 55, 48, 55, 59, 0, 59, 0, 54, 0, 54, 0, 55, 0, 55, 0, 60, 0, 60, 0, 59, 54, 47, 54, 54, 49, 0, 49, 55, 50, 43, 50, 60, 55, 48, 55, 59, 59, 59, 59, 58, 58, 58, 58, 57, 57, 57, 57, 58, 58, 58, 58
-
-ship_location: 		.byte	0:2	# x,y coordinates of ship
-obstacle_locations:	.byte	0:16	# up to 8 objects on screen, all with x,y coordinates
+song1:			.byte  	59, 54, 47, 54, 54, 49, 0, 49, 55, 50, 43, 50, 60, 55, 48, 55, 59, 0, 59, 0, 54, 0, 54, 0, 55, 0, 55, 0, 60, 0, 60, 0, 59, 54, 47, 54, 54, 49, 0, 49, 55, 50, 43, 50, 60, 55, 48, 55, 59, 59, 59, 59, 58, 58, 58, 58, 57, 57, 57, 57, 58, 58, 58, 58
+# generated with [3*(x % 8)+4 if x > 0 else 0 for x in above list]
+song1_objects:		.byte	13, 22, 25, 22, 22, 7,  0,  7, 25, 10, 13, 10, 16, 25, 4, 25, 13,  0, 13, 0, 22, 0, 22, 0, 25, 0, 25, 0, 16, 0, 16, 0, 13, 22, 25, 22, 22,  7, 0,  7, 25, 10, 13, 10, 16, 25,  4, 25, 13, 13, 13, 13, 10, 10, 10, 10,  7,  7,  7,  7, 10, 10, 10, 10
+# generated with [x%4 for x in above list]
+song1_object_type:	.byte	1, 2, 1, 2, 2, 3, 0, 3, 1, 2, 1, 2, 0, 1, 0, 1, 1, 0, 1, 0, 2, 0, 2, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 2, 1, 2, 2, 3, 0, 3, 1, 2, 1, 2, 0, 1, 0, 1, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 2, 2, 2, 2
+object_locations:	.byte	0:32	# up to 8 objects on screen, each with padding to allow indexing by shifting, x,y coordinates, and obj type
+ship_location: 		.byte	0:4	# x,y coordinates of ship and 2 bytes of padding
 
 
 
@@ -175,10 +177,18 @@ loop_music_continue:
 	lb $a0, song1($s0)		# load note
 	beqz $a0, loop_empty_note
 	jal play_single_note		# play note if pitch is not 0
+	
+	# drop an object at each note
+	lb $a0, song1_objects($s0)		# load X coordinate
+	lb $a1, song1_object_type($s0)		# load obj type
+	move $a2, $s0				# load note index
+	jal drop_object
 loop_empty_note:
 	addi $s0, $s0, 1		# increment note index
 loop_end:
 	# do miscellaneous end-of-loop tasks
+	
+	jal move_objects	# Move objects downwards and remove finished ones
 	jal pause 		# pause until next frame
 	addi $s1, $s1, 1	# increment frame counter
 	j loop			# keep looping
@@ -194,6 +204,7 @@ pause:
 	li $v0, 32
 	syscall
 	jr $ra
+
 
 # params: $a0: key input, $s6: ship X, $s7: ship Y
 # s6 and s7 are treated as globals that may be mutated by this function
@@ -277,6 +288,8 @@ handle_input_return:
 ######## Functions - call these with jal
 
 
+
+
 clear_screen:
 	li $t1, SCREEN_WIDTH
 	mul $t1, $t1, SCREEN_HEIGHT
@@ -339,7 +352,7 @@ draw_enemy1_draw:
 	
 
 # draw the large enemy at the specified coordinates
-# params: $a0: x, $a1: y, @$a2: undraw
+# params: $a0: x, $a1: y, $a2: undraw
 # x < 29, y < 60 - leave space, never draw it on the edge
 draw_enemy2:
 	xy_address
@@ -393,8 +406,114 @@ play_single_note:
 	li $a3, AUDIO_VOLUME
 	li $v0, 31		# play MIDI async
 	syscall
-
 	jr $ra			# return
+	
+
+# move objects downwards and remoev them once off-screen
+move_objects:
+	push_stack($ra)
+	push_stack($s0)
+	push_stack($s1)
+	push_stack($s2)
+	push_stack($s3)
+	li $s3, 31	# init iterator to last byte of last array item
+move_objects_loop:
+	lb $s2, object_locations($s3)	# load obj type
+	addi $s3, $s3, -1	# decrement to Y coord
+	lb $s1, object_locations($s3)	# load y coord
+	move $a1, $s1			# move Y coord to parameter
+	addi $s3, $s3, -1	# decrement to X coord
+	lb $s0, object_locations($s3)	# load x coord
+	move $a0, $s0			# move X coord to parameter
+
+	# check for off-screen
+	blt $a1, 64, move_objects_loop_onscreen
+	sb $zero, object_locations($s3)	# unset X coord
+	addi $s3, $s3, 1		# move to Y coord 
+	sb $zero, object_locations($s3)	# unset Y coord
+	addi $s3, $s3, 1		# move to obj type
+	sb $zero, object_locations($s3)	# unset obj type
+	addi $s3, $s3, -2		# move back to X coord 
+	j move_objects_loop_continue
+move_objects_loop_onscreen:
+	addi $s3, $s3, -2	# decrement to next item
+	li $a2, 1			# undraw first
+	beq $s2, 0, move_objects_loop_continue	# if obj type == 0, do nothing
+	beq $s2, 1, move_object_enemy_1
+	beq $s2, 2, move_object_enemy_2
+	j move_object_enemy_3
+move_object_enemy_1:
+	jal draw_enemy1
+	li $a2 0	# now draw
+	move $a0, $s0	# reload x coord
+	add $a1, $s1, OBJECT_SPEED	# move objects down towards ship - load new Y
+	addi $s3, $s3, 3		# move to index of Y coord
+	sb $a1, object_locations($s3)	# Save new Y coord of moved object
+	addi $s3, $s3, -3		# move past Y and X coords and pad
+	jal draw_enemy1		# draw enemy in new location
+	j move_objects_loop_continue
+move_object_enemy_2:
+	jal draw_enemy2
+	li $a2 0	# now draw
+	move $a0, $s0	# reload x coord
+	add $a1, $s1, OBJECT_SPEED	# move objects down towards ship - load new Y
+	addi $s3, $s3, 3		# move to index of Y coord
+	sb $a1, object_locations($s3)	# Save new Y coord of moved object
+	addi $s3, $s3, -3		# move past Y and X coords
+	jal draw_enemy2		# draw enemy in new location
+	j move_objects_loop_continue
+move_object_enemy_3:
+	jal draw_enemy3
+	li $a2 0	# now draw
+	move $a0, $s0	# reload x coord
+	add $a1, $s1, OBJECT_SPEED	# move objects down towards ship - load new Y
+	addi $s3, $s3, 3		# move to index of Y coord
+	sb $a1, object_locations($s3)	# Save new Y coord of moved object
+	addi $s3, $s3, -3		# move past Y and X coords
+	jal draw_enemy3		# draw enemy in new location
+	j move_objects_loop_continue
+move_objects_loop_continue:
+	bgez $s3, move_objects_loop
+	pop_stack($s3)
+	pop_stack($s2)
+	pop_stack($s1)
+	pop_stack($s0)
+	pop_stack($ra)
+	jr $ra
+	
+	
+# drop object. param $a0: x coord, $a1: object type, $a2: note index
+drop_object:
+	# calculate object array index to use (note index % 16)
+	andi $t1, $a2, 15	# index mod 16
+	sll $t1, $t1, 2		# mult. by 4 since each struct stores 4 bytes
+	
+	move $t0, $a1	# move obj type to temp register since we need a1 for the y coord
+	li $a1, 5	# load y coord for draw - spawn object off screen
+	addi $t1, $t1, 1		# move to x coord location (skip padding)
+	sb $a0, object_locations($t1)	# store x coord
+	addi $t1, $t1, 1		# move to y coord location
+	sb $a1, object_locations($t1)	# store y coord
+	addi $t1, $t1, 1		# move to obj type location
+	sb $t0, object_locations($t1)	# store obj type
+	li $a2, 0			# draw, not undraw
+	push_stack($ra)
+	beq $t0, 1, drop_object_enemy_1
+	beq $t0, 2, drop_object_enemy_2
+	j drop_object_enemy_3
+drop_object_enemy_1:
+	jal draw_enemy1
+	pop_stack($ra)
+	jr $ra
+drop_object_enemy_2:
+	jal draw_enemy2
+	pop_stack($ra)
+	jr $ra
+drop_object_enemy_3:
+	jal draw_enemy3
+	pop_stack($ra)
+	jr $ra
+	
 	
 
 # test instruments
