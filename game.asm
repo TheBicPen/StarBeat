@@ -47,8 +47,8 @@
 #.eqv	SLEEP_AFTER_NOTE	180	# time between notes/frames
 
 # Use frame-based delay for notes - realtime syscalls are expensive
-.eqv	FRAME_DELAY	5	# sleep between  - 200fps
-.eqv	FRAMES_PER_NOTE	25	# How many frames there are per note - delay should be ~100ms
+.eqv	FRAME_DELAY	20	# sleep between  - 50fps
+.eqv	FRAMES_PER_NOTE	5	# How many frames there are per note - delay should be ~100ms
 
 .eqv	SONG1_LENGTH	64	# number of notes in song1
 
@@ -409,7 +409,7 @@ play_single_note:
 	jr $ra			# return
 	
 
-# move objects downwards and remoev them once off-screen
+# move objects downwards and remove them once off-screen
 move_objects:
 	push_stack($ra)
 	push_stack($s0)
@@ -426,24 +426,16 @@ move_objects_loop:
 	lb $s0, object_locations($s3)	# load x coord
 	move $a0, $s0			# move X coord to parameter
 
-	# check for off-screen
-	blt $a1, 64, move_objects_loop_onscreen
-	sb $zero, object_locations($s3)	# unset X coord
-	addi $s3, $s3, 1		# move to Y coord 
-	sb $zero, object_locations($s3)	# unset Y coord
-	addi $s3, $s3, 1		# move to obj type
-	sb $zero, object_locations($s3)	# unset obj type
-	addi $s3, $s3, -2		# move back to X coord 
-	j move_objects_loop_continue
-move_objects_loop_onscreen:
 	addi $s3, $s3, -2	# decrement to next item
 	li $a2, 1			# undraw first
 	beq $s2, 0, move_objects_loop_continue	# if obj type == 0, do nothing
 	beq $s2, 1, move_object_enemy_1
 	beq $s2, 2, move_object_enemy_2
-	j move_object_enemy_3
+	beq $s2, 3, move_object_enemy_3
+	j end
 move_object_enemy_1:
 	jal draw_enemy1
+	bgt $s1, 64, move_objects_loop_despawn	# check for off-screen
 	li $a2 0	# now draw
 	move $a0, $s0	# reload x coord
 	add $a1, $s1, OBJECT_SPEED	# move objects down towards ship - load new Y
@@ -454,6 +446,7 @@ move_object_enemy_1:
 	j move_objects_loop_continue
 move_object_enemy_2:
 	jal draw_enemy2
+	bgt $s1, 64, move_objects_loop_despawn	# check for off-screen
 	li $a2 0	# now draw
 	move $a0, $s0	# reload x coord
 	add $a1, $s1, OBJECT_SPEED	# move objects down towards ship - load new Y
@@ -464,6 +457,7 @@ move_object_enemy_2:
 	j move_objects_loop_continue
 move_object_enemy_3:
 	jal draw_enemy3
+	bgt $s1, 64, move_objects_loop_despawn	# check for off-screen
 	li $a2 0	# now draw
 	move $a0, $s0	# reload x coord
 	add $a1, $s1, OBJECT_SPEED	# move objects down towards ship - load new Y
@@ -471,6 +465,14 @@ move_object_enemy_3:
 	sb $a1, object_locations($s3)	# Save new Y coord of moved object
 	addi $s3, $s3, -3		# move past Y and X coords
 	jal draw_enemy3		# draw enemy in new location
+	j move_objects_loop_continue
+move_objects_loop_despawn:
+	sb $zero, object_locations($s3)	# unset X coord
+	addi $s3, $s3, 1		# move to Y coord 
+	sb $zero, object_locations($s3)	# unset Y coord
+	addi $s3, $s3, 1		# move to obj type
+	sb $zero, object_locations($s3)	# unset obj type
+	addi $s3, $s3, -2		# move back to X coord 
 	j move_objects_loop_continue
 move_objects_loop_continue:
 	bgez $s3, move_objects_loop
@@ -483,12 +485,14 @@ move_objects_loop_continue:
 	
 	
 # drop object. param $a0: x coord, $a1: object type, $a2: note index
+# hope that draw calls don't modify t4
 drop_object:
-	# calculate object array index to use (note index % 16)
-	andi $t1, $a2, 15	# index mod 16
+	# calculate object array index to use (note index % 8)
+	andi $t1, $a2, 7	# index mod 8
 	sll $t1, $t1, 2		# mult. by 4 since each struct stores 4 bytes
 	
 	move $t0, $a1	# move obj type to temp register since we need a1 for the y coord
+	### HERE
 	li $a1, 5	# load y coord for draw - spawn object off screen
 	addi $t1, $t1, 1		# move to x coord location (skip padding)
 	sb $a0, object_locations($t1)	# store x coord
@@ -513,8 +517,6 @@ drop_object_enemy_3:
 	jal draw_enemy3
 	pop_stack($ra)
 	jr $ra
-	
-	
 
 # test instruments
 test_instruments:
