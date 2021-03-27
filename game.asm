@@ -52,7 +52,7 @@
 
 .eqv	SONG1_LENGTH	64	# number of notes in song1
 
-.eqv	OBJECT_SPEED	2
+.eqv	OBJECT_SPEED	3
 
 .eqv	SHIP_COLOUR1	0x0000bb
 .eqv	SHIP_COLOUR2	0x888888
@@ -70,7 +70,7 @@ song1:			.byte  	59, 54, 47, 54, 54, 49, 0, 49, 55, 50, 43, 50, 60, 55, 48, 55, 
 # generated with [3*(x % 8)+4 if x > 0 else 0 for x in above list]
 song1_objects:		.byte	13, 22, 25, 22, 22, 7,  0,  7, 25, 10, 13, 10, 16, 25, 4, 25, 13,  0, 13, 0, 22, 0, 22, 0, 25, 0, 25, 0, 16, 0, 16, 0, 13, 22, 25, 22, 22,  7, 0,  7, 25, 10, 13, 10, 16, 25,  4, 25, 13, 13, 13, 13, 10, 10, 10, 10,  7,  7,  7,  7, 10, 10, 10, 10
 # generated with [x%4 for x in above list]
-song1_object_type:	.byte	1, 2, 1, 2, 2, 3, 0, 3, 1, 2, 1, 2, 0, 1, 0, 1, 1, 0, 1, 0, 2, 0, 2, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 2, 1, 2, 2, 3, 0, 3, 1, 2, 1, 2, 0, 1, 0, 1, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 2, 2, 2, 2
+song1_object_type:	.byte	1,  2,  1,  2,  2,  3,  0,  3,  1,  2,  1,  2,  3,  1, 3,  1,  1,  0,  1, 0,  2, 0,  2, 0,  1, 0,  1, 0,  3, 0,  3, 0,  1,  2,  1,  2,  2,  3, 0,  3,  1,  2,  1,  2,  3,  1,  3,  1,  1,  1,  1,  1,  2,  2,  2,  2,  3,  3,  3,  3,  2,  2,  2,  2
 object_locations:	.byte	0:32	# up to 8 objects on screen, each with padding to allow indexing by shifting, x,y coordinates, and obj type
 ship_location: 		.byte	0:4	# x,y coordinates of ship and 2 bytes of padding
 
@@ -426,7 +426,6 @@ move_objects_loop:
 	lb $s0, object_locations($s3)	# load x coord
 	move $a0, $s0			# move X coord to parameter
 
-	addi $s3, $s3, -2	# decrement to next item
 	li $a2, 1			# undraw first
 	beq $s2, 0, move_objects_loop_continue	# if obj type == 0, do nothing
 	beq $s2, 1, move_object_enemy_1
@@ -439,9 +438,9 @@ move_object_enemy_1:
 	li $a2 0	# now draw
 	move $a0, $s0	# reload x coord
 	add $a1, $s1, OBJECT_SPEED	# move objects down towards ship - load new Y
-	addi $s3, $s3, 3		# move to index of Y coord
+	addi $s3, $s3, 1		# move to index of Y coord
 	sb $a1, object_locations($s3)	# Save new Y coord of moved object
-	addi $s3, $s3, -3		# move past Y and X coords and pad
+	addi $s3, $s3, -1		# move back to X coord
 	jal draw_enemy1		# draw enemy in new location
 	j move_objects_loop_continue
 move_object_enemy_2:
@@ -450,9 +449,9 @@ move_object_enemy_2:
 	li $a2 0	# now draw
 	move $a0, $s0	# reload x coord
 	add $a1, $s1, OBJECT_SPEED	# move objects down towards ship - load new Y
-	addi $s3, $s3, 3		# move to index of Y coord
+	addi $s3, $s3, 1		# move to index of Y coord
 	sb $a1, object_locations($s3)	# Save new Y coord of moved object
-	addi $s3, $s3, -3		# move past Y and X coords
+	addi $s3, $s3, -1		# move back to X coord
 	jal draw_enemy2		# draw enemy in new location
 	j move_objects_loop_continue
 move_object_enemy_3:
@@ -461,9 +460,9 @@ move_object_enemy_3:
 	li $a2 0	# now draw
 	move $a0, $s0	# reload x coord
 	add $a1, $s1, OBJECT_SPEED	# move objects down towards ship - load new Y
-	addi $s3, $s3, 3		# move to index of Y coord
+	addi $s3, $s3, 1		# move to index of Y coord
 	sb $a1, object_locations($s3)	# Save new Y coord of moved object
-	addi $s3, $s3, -3		# move past Y and X coords
+	addi $s3, $s3, -1		# move back to X coord
 	jal draw_enemy3		# draw enemy in new location
 	j move_objects_loop_continue
 move_objects_loop_despawn:
@@ -475,6 +474,7 @@ move_objects_loop_despawn:
 	addi $s3, $s3, -2		# move back to X coord 
 	j move_objects_loop_continue
 move_objects_loop_continue:
+	addi $s3, $s3, -2	# decrement to next item
 	bgez $s3, move_objects_loop
 	pop_stack($s3)
 	pop_stack($s2)
@@ -493,7 +493,7 @@ drop_object:
 	
 	move $t0, $a1	# move obj type to temp register since we need a1 for the y coord
 	### HERE
-	li $a1, 5	# load y coord for draw - spawn object off screen
+	li $a1, -4	# load y coord for draw - spawn object off screen
 	addi $t1, $t1, 1		# move to x coord location (skip padding)
 	sb $a0, object_locations($t1)	# store x coord
 	addi $t1, $t1, 1		# move to y coord location
@@ -504,7 +504,8 @@ drop_object:
 	push_stack($ra)
 	beq $t0, 1, drop_object_enemy_1
 	beq $t0, 2, drop_object_enemy_2
-	j drop_object_enemy_3
+	beq $t0, 3, drop_object_enemy_3
+	j end
 drop_object_enemy_1:
 	jal draw_enemy1
 	pop_stack($ra)
