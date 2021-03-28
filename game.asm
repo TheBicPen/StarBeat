@@ -64,7 +64,7 @@
 # colours
 .eqv	SHIP_COLOUR1	0x0000bb
 .eqv	SHIP_COLOUR2	0x888888
-#.eqv	SHIP_COLOUR3	0xff9900
+.eqv	SHIP_COLOUR3	0xff9900	# not used
 .eqv	ENEMY_COLOUR1	0x555555
 .eqv	ENEMY_COLOUR2	0x777777
 .eqv	ENEMY_COLOUR3	0x444444
@@ -172,9 +172,10 @@ loop:
 	# check for key input and handle it if necessary
 	li $t9, INPUT_BUFFER 
 	lw $t8, 0($t9)
-	bne $t8, 1, loop_music
+	bne $t8, 1, loop_no_input
 	lw $a0, 4($t9) 			# this assumes $t9 is set to 0xfff0000 from before
 	jal handle_input
+loop_no_input:
 	# draw ship at possibly updated coordinates
 	move $a0, $s6		# move x into param 1
 	move $a1, $s7		# move y into param 2
