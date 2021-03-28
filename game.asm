@@ -483,12 +483,19 @@ draw_enemy3_colours:
 	li $t2, ENEMY_COLOUR2
 	li $t3, ENEMY_COLOUR3
 draw_enemy3_draw:
-	sw $t3, 0($t0)	
-	sw $t1, 4($t0)		
-	sw $t3, 8($t0)
-	sw $t1, 128($t0)
+	sw $t3, -128($t0)	
+	sw $t3, -124($t0)		
+	sw $t1, -120($t0)
+	sw $t3, -4($t0)	
+	sw $t2, 0($t0)	
+	sw $t2, 4($t0)		
+	sw $t2, 8($t0)
+	sw $t3, 12($t0)
+	sw $t1, 124($t0)
+	sw $t3, 128($t0)
 	sw $t2, 132($t0)		
 	sw $t1, 136($t0)
+	sw $t1, 140($t0)
 	sw $t3, 256($t0)
 	sw $t1, 260($t0)
 	sw $t3, 264($t0)
@@ -665,30 +672,4 @@ audio_test_loop:
 	addi $a2, $a2, 1
 	blt $a2, 128, audio_test_loop
 	jr $ra
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
