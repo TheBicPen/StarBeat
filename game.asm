@@ -30,7 +30,8 @@
 #
 # Any additional information that the TA needs to know:
 # - Make sure your volume isn't too high before starting the game. There is sound.
-# - 
+# - Restart MARS before running the code. I'm using the version with the crash fixed, and it gets 1/3 the expected framerate on subsequent executions after running the program once. 
+#	It's not very fun to play a laggy game. The first time should run buttery smooth
 ######################################################################
 
 ######## Constants
@@ -40,11 +41,13 @@
 .eqv 	INPUT_BUFFER	0xffff0000
 
 # sounds
-.eqv	AUDIO_DURATION	200	# length of a single note in milliseconds
+.eqv	AUDIO_DURATION	200	# Length of a single note in milliseconds. Adjust this based on FRAMES_PER_NOTE and vice-versa.
+				# This uses a realtime clock so lag might cause the music to sound wrong, and no lag might cause overlaps if set too high
+				# The implementation of this in MARS only allows 1 sound at a time (overlaps cause weird audio glitches)
 .eqv	INSTRUMENT	81	# MIDI instrument to play notes with
 .eqv	AUDIO_VOLUME	100
 # Use frame-based delay for notes - realtime syscalls are expensive
-.eqv	FRAME_DELAY	20	# sleep between  - 50fps
+.eqv	FRAME_DELAY	20	# millisecond delay between frames, ie. inverse of framerate. Currently 50 FPS
 .eqv	FRAMES_PER_NOTE	5	# How many frames there are per note - delay should be ~100ms
 
 # ong-specific info
@@ -204,28 +207,36 @@ end:	li $v0, 10 		# terminate the program gracefully
 
 
 game_over:
-	j end
+	jal clear_screen
+	jal pause
+	# check for P and handle it if necessary
+	li $t9, INPUT_BUFFER 
+	lw $t8, 0($t9)
+	bne $t8, 1, game_over
+	lw $t8, 4($t9)
+	beq $t8, 0x70, main	# ASCII code of 'p'
+	j game_over		# keep looping until p is pressed
 
 ######## Functions - call these with jal
 
 # Draw HP at the top of the screen
 # Called from main so ship HP is in $s5
 draw_hp:
-	sll $t0, $s5, 3		# shift current HP twice for word, once for 1-pixel gap
-	addi $t0, $t0, 132	# draw on 2nd line: 132=(32+1)*4
-	li $t2, MAX_HEALTH	# init iterator for undraw loop
+	sll $t0, $s5, 3		# shift current HP iterator twice for word, once for 1-pixel gap
+	addi $t0, $t0, 124	# draw on 2nd line: 124=(32-1)*4
+	li $t2, MAX_HEALTH	# init max HP iterator for undraw loop
 	sll $t2, $t2, 3		# shift max HP twice for word, once for 1-pixel gap
-	addi $t2, $t2, 132	# draw on 2nd line: 132=(32+1)*4
+	addi $t2, $t2, 124	# draw on 2nd line
 	li $t3, 0x000000
 	li $t1, HP_COLOUR
-draw_hp_undraw_loop:		# TODO: use a single loop and change draw colour instead of overdrawing twice per frame
+draw_hp_undraw_loop:		# this might actually be faster than a single loop - O(1) vs. O(n) jumps
 	sw $t3, FRAME_BUFFER($t2)	# undraw pixels
 	addi $t2, $t2, -8	# move 2 pixels left
-	bgt $t2, 128, draw_hp_undraw_loop
+	bgt $t2, $t0, draw_hp_undraw_loop
 draw_hp_loop:
 	sw $t1, FRAME_BUFFER($t0)	# draw 
 	addi $t0, $t0, -8	# move 2 pixels left
-	bgt $t0, 128, draw_hp_loop
+	bgt $t0, 124, draw_hp_loop
 	jr $ra
 
 # pause between notes.
@@ -243,6 +254,7 @@ handle_input:
 	beq $a0, 0x73, ship_move_down		# ASCII code of 's'
 	beq $a0, 0x77, ship_move_up		# ASCII code of 'w'
 	beq $a0, 0x64, ship_move_right		# ASCII code of 'd'
+	beq $a0, 0x70, main			# ASCII code of 'p'
 	jr $ra					# Else, ignore input
 ship_move_left:
 	blez $s6, handle_input_return	# if ship at left edge, pass
