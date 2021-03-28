@@ -41,21 +41,22 @@
 .eqv 	INPUT_BUFFER	0xffff0000
 
 # sounds
-.eqv	AUDIO_DURATION	200	# Length of a single note in milliseconds. Adjust this based on FRAMES_PER_NOTE and vice-versa.
+.eqv	AUDIO_DURATION	300	# Length of a single note in milliseconds. Adjust this based on FRAMES_PER_NOTE and vice-versa.
 				# This uses a realtime clock so lag might cause the music to sound wrong, and no lag might cause overlaps if set too high
 				# The implementation of this in MARS only allows 1 sound at a time (overlaps cause weird audio glitches)
 .eqv	INSTRUMENT	81	# MIDI instrument to play notes with
 .eqv	AUDIO_VOLUME	100
 # Use frame-based delay for notes - realtime syscalls are expensive
 .eqv	FRAME_DELAY	20	# millisecond delay between frames, ie. inverse of framerate. Currently 50 FPS
-.eqv	FRAMES_PER_NOTE	5	# How many frames there are per note - delay should be ~100ms
+.eqv	FRAMES_PER_NOTE	10	# How many frames there are per note - delay should be ~100ms
+.eqv	SHIP_EXPLODE_ANIMATION_DELAY	500
 
-# ong-specific info
+# song-specific info
 .eqv	SONG1_LENGTH	64	# number of notes in song1
 
 # gameplay settings
-.eqv	OBJECT_SPEED	3
-.eqv 	MAX_HEALTH	3
+.eqv	OBJECT_SPEED	2
+.eqv 	MAX_HEALTH	7
 
 # colours
 .eqv	SHIP_COLOUR1	0x0000bb
@@ -353,24 +354,33 @@ ship_explode:
 	xy_address
 	li $t1, SHIP_EXPLODE1
 	li $t2, SHIP_EXPLODE2
-	li $t3, SHIP_EXPLODE3
-	sw $t1, 0($t0)		
+	li $t3, SHIP_EXPLODE3	
+	sw $t1, 0($t0)
 	sw $t1, 4($t0)		
-	sw $t1, 8($t0)
 	sw $t1, 128($t0)
-	sw $t1, 132($t0)		
-	sw $t1, 136($t0)
-	sw $t1, 256($t0)
-	sw $t1, 260($t0)		
-	sw $t1, 264($t0)
-	push_stack($ra)
-	jal pause
-	sw $t1, -132($t0)
-	sw $t1, -128($t0)
-	sw $t1, -124($t0)
-	sw $t1, -4($t0)
-	sw $t2, 0($t0)		
+	sw $t3, 132($t0)		
+	sw $t2, 136($t0)
+	sw $t2, 260($t0)
+	li $a0, SHIP_EXPLODE_ANIMATION_DELAY
+	li $v0, 32
+	syscall
+	sw $t3, 0($t0)		
 	sw $t2, 4($t0)		
+	sw $t3, 8($t0)
+	sw $t1, 128($t0)
+	sw $t3, 132($t0)		
+	sw $t2, 136($t0)
+	sw $t3, 260($t0)		
+	sw $t1, 264($t0)
+	li $a0, SHIP_EXPLODE_ANIMATION_DELAY
+	li $v0, 32
+	syscall
+	sw $t1, -132($t0)
+	sw $t2, -128($t0)
+	sw $t2, -124($t0)
+	sw $t3, -4($t0)
+	sw $t3, 0($t0)		
+	sw $t3, 4($t0)		
 	sw $t2, 8($t0)
 	sw $t1, 12($t0)
 	sw $t1, 124($t0)
@@ -378,13 +388,14 @@ ship_explode:
 	sw $t3, 132($t0)		
 	sw $t2, 136($t0)
 	sw $t1, 140($t0)
-	sw $t1, 152($t0)
+	sw $t1, 148($t0)
 	sw $t3, 256($t0)
 	sw $t2, 260($t0)		
 	sw $t2, 264($t0)
-	sw $t1, 268($t0)
-	jal pause
-	pop_stack($ra)
+	sw $t2, 268($t0)
+	li $a0, SHIP_EXPLODE_ANIMATION_DELAY
+	li $v0, 32
+	syscall
 	jr $ra
 	
 # draw the ship at the specified coordinates
