@@ -58,7 +58,8 @@
 .eqv	SONG1_LENGTH	64	# number of notes in song1
 
 # gameplay settings
-.eqv	OBJECT_SPEED	2
+.eqv	OBJECT_SPEED	2		# speed of objects to avoid
+.eqv	POWERUP_OBJECT_SPEED	1	# speed of objects to collect
 .eqv 	MAX_HEALTH	7
 
 # colours
@@ -69,6 +70,7 @@
 .eqv	ENEMY_COLOUR2	0x777777
 .eqv	ENEMY_COLOUR3	0x444444
 .eqv	HP_COLOUR	0xff0000
+.eqv 	POWERUP_COLOUR	0x33dd33
 .eqv	SHIP_EXPLODE1	0xfc520f
 .eqv	SHIP_EXPLODE2	0xfc7e0f
 .eqv	SHIP_EXPLODE3	0xfca50f
@@ -82,6 +84,7 @@ song1_objects:		.byte	13, 22, 25, 22, 22, 7,  0,  7, 25, 10, 13, 10, 16, 25, 4, 
 # make sure that all objects on non-empty notes have a value of 1, 2, or 3
 song1_object_type:	.byte	1,  2,  1,  2,  2,  3,  0,  3,  1,  2,  1,  2,  3,  1, 3,  1,  1,  0,  1, 0,  2, 0,  2, 0,  1, 0,  1, 0,  3, 0,  3, 0,  1,  2,  1,  2,  2,  3, 0,  3,  1,  2,  1,  2,  3,  1,  3,  1,  1,  1,  1,  1,  2,  2,  2,  2,  3,  3,  3,  3,  2,  2,  2,  2
 object_locations:	.byte	0:32	# up to 8 objects on screen, each with padding to allow indexing by shifting, x,y coordinates, and obj type
+powerup_location:	.byte	0:3	# stores x,y coords and type for a single powerup
 
 game_over_screen_data:	.byte	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 224, 232, 207, 207, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 224, 240, 122, 137, 137, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 188, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 				0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 188, 188, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 122, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 188, 188, 0, 0, 0, 188, 232, 224, 188, 0, 0, 0, 0, 0, 0, 0, 0, 232, 237, 0, 224, 188, 0, 0, 0, 0, 122, 244, 188, 0, 0, 0, 188, 188, 0, 0, 188, 224, 122, 224, 188, 122, 232, 208, 115, 232, 122, 232, 122, 255, 237, 237, 244, 188, 188, 0, 0, 188, 232, 122, 232, 122, 0, 0, 0, 255, 0, 0, 188, 188, 0, 0, 0, 232, 122, 115, 128, 251, 122, 188, 224, 188, 0, 255, 224, 188, 188, 0, 255, 218, 88, 122, 237, 122, 0, 0, 0, 255, 0, 0, 231, 224, 0, 0, 255, 0, 0, 0, 188, 250, 122, 122, 244, 188, 0, 244, 160, 188, 188, 188, 188, 170, 255, 232, 232, 0, 0, 0, 0, 188, 240, 203, 244, 0, 0, 224, 224, 0, 0, 0, 224, 224, 0, 0, 255, 122, 0, 244, 122, 188, 188, 122, 232, 0, 0, 0, 122, 0, 0, 0, 0, 0, 224, 232, 0, 0, 0, 244, 203, 188, 232, 255, 231, 250, 0, 0, 232, 122, 0, 251, 0,
@@ -185,11 +188,11 @@ loop_no_input:
 
 loop_music:		
 	# Play notes of song
-	#bge $s0, SONG1_LENGTH, end			# terminate once song finishes
 	blt $s1, FRAMES_PER_NOTE, loop_end		# don't play note if enough frames haven't passed
 	move $s1, $zero					# reset frame counter
 	blt $s0, SONG1_LENGTH, loop_music_continue 	# play next note - don't reset to start 
 	move $s0, $zero					# reset to start of song
+	jal drop_powerup				# drop powerup when song loops
 loop_music_continue:
 	# play a note from the song
 	lb $a0, song1($s0)		# load note
@@ -205,10 +208,10 @@ loop_empty_note:
 	addi $s0, $s0, 1		# increment note index
 loop_end:
 	# do miscellaneous end-of-loop tasks
-	
 	jal move_objects	# Move objects downwards, remove finished ones, check collisions
-	# this could be considered bad design but I just don't want to loop over the game objects 3 times in 3 different functions
-	
+				# this could be considered bad design but I just don't want to loop over the game objects 3 times in 3 different functions
+	jal move_powerup
+	jal check_powerup_collision	
 	jal draw_hp		# draw HP on screen
 	blez $s5, game_over	# check for game over
 	jal pause 		# pause until next frame
@@ -505,6 +508,18 @@ draw_enemy3_draw:
 	sw $t3, 264($t0)
 	jr $ra
 	
+# draw the powerup at the specified coordinates
+# params: $a0: x, $a1: y, $a2: undraw
+# x < 32, y < 62
+draw_powerup:
+	xy_address
+	check_undraw (draw_powerup_draw, draw_powerup_colours)
+draw_powerup_colours:
+	li $t1, POWERUP_COLOUR
+draw_powerup_draw:
+	sw $t1, 0($t0)	# draw single pixel powerup
+	jr $ra
+	
 	
 # play single note (async). param $a0: pitch
 play_single_note:
@@ -541,6 +556,26 @@ check_collision_enemy3:
 	jr $ra
 decrement_hp:
 	addi $s5, $s5, -1
+	jr $ra
+	
+# s5: current health, s6: ship X, s7: ship Y
+# increments s5 on collision with powerup
+check_powerup_collision:
+	lb $t0, powerup_location
+	lb $t1, powerup_location+1
+	# Manhattan distance
+	addi $t2, $s6, 1	# shift center of ship to the right for better detection
+				# ship 'center' is normally at top left
+	move $t3, $s7		# load Y
+	sub $t2, $t0, $t2
+	abs $t2, $t2
+	sub $t3, $t1, $t3
+	abs $t3, $t3
+	add $t2, $t2, $t3
+	bgt $t2, 3, check_powerup_collision_none
+	bge $s5, MAX_HEALTH, check_powerup_collision_none	# no overheal
+	addi $s5, $s5, 1	# add 1 HP
+check_powerup_collision_none:
 	jr $ra
 	
 # move objects downwards and remove them once off-screen
@@ -624,6 +659,43 @@ move_objects_loop_continue:
 	pop_stack($ra)
 	jr $ra
 	
+move_powerup:
+	lb $t2, powerup_location+2	# powerup type
+	bgtz $t2, move_powerup_exists
+	jr $ra
+move_powerup_exists:
+	push_stack($ra)
+	lb $a0, powerup_location	# load X
+	lb $a1, powerup_location+1	# load Y
+	li $a2, 1			# undraw: True
+	jal draw_powerup
+	lb $a0, powerup_location	# reload X
+	lb $a1, powerup_location+1	# reload Y
+	addi $a1, $a1, POWERUP_OBJECT_SPEED
+	# check that powerup is still on screen
+	blt $a1, 63, move_powerup_onscreen
+	sb $zero, powerup_location+2	# store that no powerup exists
+	pop_stack($ra)
+	jr $ra
+move_powerup_onscreen:
+	sb $a1, powerup_location+1	# store updated Y
+	move $a2, $zero			# undraw: False
+	jal draw_powerup
+	pop_stack($ra)
+	jr $ra
+
+# drop powerup at random location	
+drop_powerup:
+	# get random X coord
+	li $v0, 42	
+	li $a0, 0	# always use 1st random instance
+	li $a1, 31	# up to 31
+	syscall
+	sb $a0, powerup_location	# store X
+	sb $zero, powerup_location+1	# store Y
+	li $t0, 1
+	sb $t0, powerup_location+2	# store type
+	jr $ra
 	
 # drop object. param $a0: x coord, $a1: object type, $a2: note index
 # hope that draw calls don't modify t4
