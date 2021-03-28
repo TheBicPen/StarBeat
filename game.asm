@@ -16,13 +16,13 @@
 # -Milestone 1 DONE
 # -Milestone 2 DONE
 # -Milestone 3 DONE
-# -Milestone 4 ...
+# -Milestone 4 DONE
 #
 # Which approved features have been implemented for milestone 4?
 # (See the assignment handout for the list of additional features)
 # 1. Music loop	(approved by Moshe)
 # 2. Smooth graphics - the whole framebuffer is not redrawn each frame - only parts that have changed are redrawn
-# 3. (fill in the feature, if any)
+# 3. Powerups - shield and repair
 #... (add more if necessary)
 #
 # Link to video demonstration for final submission:
@@ -61,6 +61,7 @@
 .eqv	OBJECT_SPEED	2		# speed of objects to avoid
 .eqv	POWERUP_OBJECT_SPEED	1	# speed of objects to collect
 .eqv 	MAX_HEALTH	7
+.eqv	SHIELD_FRAMES	200		# duration of sheild in frames	
 
 # colours
 .eqv	SHIP_COLOUR1	0x0000bb
@@ -69,8 +70,10 @@
 .eqv	ENEMY_COLOUR1	0x555555
 .eqv	ENEMY_COLOUR2	0x777777
 .eqv	ENEMY_COLOUR3	0x444444
-.eqv	HP_COLOUR	0xff0000
-.eqv 	POWERUP_COLOUR	0x33dd33
+.eqv	HP_COLOUR1	0xff0000	# no shield
+.eqv	HP_COLOUR2	0x0fdfff	# shield
+.eqv 	POWERUP_COLOUR1	0x33dd33	# repair
+.eqv 	POWERUP_COLOUR2	0x0fdfff	# shield
 .eqv	SHIP_EXPLODE1	0xfc520f
 .eqv	SHIP_EXPLODE2	0xfc7e0f
 .eqv	SHIP_EXPLODE3	0xfca50f
@@ -83,7 +86,7 @@ song1:			.byte  	59, 54, 47, 54, 54, 49, 0, 49, 55, 50, 43, 50, 60, 55, 48, 55, 
 song1_objects:		.byte	13, 22, 25, 22, 22, 7,  0,  7, 25, 10, 13, 10, 16, 25, 4, 25, 13,  0, 13, 0, 22, 0, 22, 0, 25, 0, 25, 0, 16, 0, 16, 0, 13, 22, 25, 22, 22,  7, 0,  7, 25, 10, 13, 10, 16, 25,  4, 25, 19, 15,  9,  5,  2,  6,  10,  14,  7,  7,  7,  7, 12, 10,  8,  6
 # make sure that all objects on non-empty notes have a value of 1, 2, or 3
 song1_object_type:	.byte	1,  2,  1,  2,  2,  3,  0,  3,  1,  2,  1,  2,  3,  1, 3,  1,  1,  0,  1, 0,  2, 0,  2, 0,  1, 0,  1, 0,  3, 0,  3, 0,  1,  2,  1,  2,  2,  3, 0,  3,  1,  2,  1,  2,  3,  1,  3,  1,  1,  1,  1,  1,  2,  2,  2,  2,  3,  3,  3,  3,  2,  2,  2,  2
-object_locations:	.byte	0:32	# up to 8 objects on screen, each with padding to allow indexing by shifting, x,y coordinates, and obj type
+object_locations:	.byte	0:32	# up to 8 objects on screen, each with padding to allow indexing by shifting, x,y coordinates, and obj type. eg. struct{_, X, Y, type}[8]
 powerup_location:	.byte	0:3	# stores x,y coords and type for a single powerup
 
 game_over_screen_data:	.byte	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 224, 232, 207, 207, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 224, 240, 122, 137, 137, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 188, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -142,6 +145,7 @@ game_over_screen_data:	.byte	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
 # s0: music note index
 # s1: frames since last note
 
+# s4: shield state
 # s5: ship health
 # s6: ship X coordinate
 # s7: ship Y coordinate
@@ -161,6 +165,7 @@ main:
 	li $s5, MAX_HEALTH	# Init max health
 	li $s6, 14		# init ship X 
 	li $s7, 40		# init ship Y
+	li $s4, 0		# init to no shield
 
 	# draw ship at initial position
 	move $a0, $s6
@@ -213,6 +218,9 @@ loop_end:
 	jal move_powerup
 	jal check_powerup_collision	
 	jal draw_hp		# draw HP on screen
+	blez $s4, loop_no_shield
+	addi $s4, $s4, -1	# decrement shield duration each frame
+loop_no_shield:
 	blez $s5, game_over	# check for game over
 	jal pause 		# pause until next frame
 	addi $s1, $s1, 1	# increment frame counter
@@ -239,21 +247,25 @@ game_over:
 ######## Functions - call these with jal
 
 # Draw HP at the top of the screen
-# Called from main so ship HP is in $s5
+# Called from main so ship HP is in $s5, shield status in $s4
 draw_hp:
 	sll $t0, $s5, 3		# shift current HP iterator twice for word, once for 1-pixel gap
 	addi $t0, $t0, 124	# draw on 2nd line: 124=(32-1)*4
 	li $t2, MAX_HEALTH	# init max HP iterator for undraw loop
 	sll $t2, $t2, 3		# shift max HP twice for word, once for 1-pixel gap
 	addi $t2, $t2, 124	# draw on 2nd line
-	li $t3, 0x000000
-	li $t1, HP_COLOUR
+	li $t3, 0x000000	
+	blez $s4, no_shield	# choose HP colout based on shield status
+	li $t1, HP_COLOUR2
+	j draw_hp_undraw_loop
+no_shield:
+	li $t1, HP_COLOUR1
 draw_hp_undraw_loop:		# this might actually be faster than a single loop - O(1) vs. O(n) jumps
 	sw $t3, FRAME_BUFFER($t2)	# undraw pixels
 	addi $t2, $t2, -8	# move 2 pixels left
 	bgt $t2, $t0, draw_hp_undraw_loop
 draw_hp_loop:
-	sw $t1, FRAME_BUFFER($t0)	# draw 
+	sw $t1, FRAME_BUFFER($t0)	# draw HP
 	addi $t0, $t0, -8	# move 2 pixels left
 	bgt $t0, 124, draw_hp_loop
 	jr $ra
@@ -509,13 +521,20 @@ draw_enemy3_draw:
 	jr $ra
 	
 # draw the powerup at the specified coordinates
-# params: $a0: x, $a1: y, $a2: undraw
+# params: $a0: x, $a1: y, $a2: undraw, $a3: powerup type: 1 or 2
 # x < 32, y < 62
 draw_powerup:
 	xy_address
 	check_undraw (draw_powerup_draw, draw_powerup_colours)
 draw_powerup_colours:
-	li $t1, POWERUP_COLOUR
+	beq $a3, 1, draw_powerup1_colours
+	beq $a3, 2, draw_powerup2_colours
+	j end	# error
+draw_powerup1_colours:
+	li $t1, POWERUP_COLOUR1
+	j draw_powerup_draw
+draw_powerup2_colours:
+	li $t1, POWERUP_COLOUR2
 draw_powerup_draw:
 	sw $t1, 0($t0)	# draw single pixel powerup
 	jr $ra
@@ -532,7 +551,8 @@ play_single_note:
 	
 # Assume this gets called by main loop, ie. ship x,y in $s6,$s7
 # Modify ship current health, ie. $s5
-# params: $s5-$s7, $a0,$a1,$a2: obj x,y,type
+# Check current shield status from $s4
+# params: $s4-$s7, $a0,$a1,$a2: obj x,y,type
 check_collision:
 # Calculate the Manhattan distance (one-norm) between x1,y1 and x2,y2 ($a0,$a1, $s6,$s7) and store in $v0
 distance:
@@ -546,35 +566,55 @@ distance:
 	beq $a2, 3, check_collision_enemy3
 	j end	# error
 check_collision_enemy1:
-	blt $v0, 3, decrement_hp
+	blt $v0, 3, on_collision
 	jr $ra
 check_collision_enemy2:
-	blt $v0, 4, decrement_hp
+	blt $v0, 4, on_collision
 	jr $ra
 check_collision_enemy3:
-	blt $v0, 5, decrement_hp
+	blt $v0, 5, on_collision
 	jr $ra
-decrement_hp:
+on_collision:
+	bgtz $s4, on_collision_return	# do nothing if shield is up
 	addi $s5, $s5, -1
+on_collision_return:
 	jr $ra
 	
-# s5: current health, s6: ship X, s7: ship Y
-# increments s5 on collision with powerup
+# s4: shield status, s5: current health, s6: ship X, s7: ship Y
+# increments s5 on collision with repair powerup
+# sets s4 to full shield on collision with shield powerup
 check_powerup_collision:
-	lb $t0, powerup_location
-	lb $t1, powerup_location+1
+	lb $a0, powerup_location	# load X
+	lb $a1, powerup_location+1	# load Y
+	lb $a2, powerup_location+2	# load type
 	# Manhattan distance
 	addi $t2, $s6, 1	# shift center of ship to the right for better detection
 				# ship 'center' is normally at top left
 	move $t3, $s7		# load Y
-	sub $t2, $t0, $t2
+	sub $t2, $a0, $t2
 	abs $t2, $t2
-	sub $t3, $t1, $t3
+	sub $t3, $a1, $t3
 	abs $t3, $t3
 	add $t2, $t2, $t3
-	bgt $t2, 3, check_powerup_collision_none
-	bge $s5, MAX_HEALTH, check_powerup_collision_none	# no overheal
-	addi $s5, $s5, 1	# add 1 HP
+	bgt $t2, 3, check_powerup_collision_none	# distance > 3
+	beq $a2, 1, check_powerup_collision_repair
+	beq $a2, 2, check_powerup_collision_shield
+	j end	# error
+check_powerup_collision_repair:	
+	bge $s5, MAX_HEALTH, remove_powerup_from_screen	# no overheal
+	addi $s5, $s5, 1		# add 1 HP
+	j remove_powerup_from_screen
+check_powerup_collision_shield:
+	li $s4, SHIELD_FRAMES		# add full shield
+	j remove_powerup_from_screen
+remove_powerup_from_screen:
+	li $a2, 1	# undraw powerup
+	push_stack($ra)
+	jal draw_powerup
+	pop_stack($ra)
+	sb $zero, powerup_location+2	# Clear powerup type
+	sb $zero, powerup_location+1	# Clear powerup Y
+	sb $zero, powerup_location	# Clear powerup X
 check_powerup_collision_none:
 	jr $ra
 	
@@ -668,6 +708,7 @@ move_powerup_exists:
 	lb $a0, powerup_location	# load X
 	lb $a1, powerup_location+1	# load Y
 	li $a2, 1			# undraw: True
+	# no need to choose powerup type for undraw
 	jal draw_powerup
 	lb $a0, powerup_location	# reload X
 	lb $a1, powerup_location+1	# reload Y
@@ -680,11 +721,13 @@ move_powerup_exists:
 move_powerup_onscreen:
 	sb $a1, powerup_location+1	# store updated Y
 	move $a2, $zero			# undraw: False
+	lb $a3, powerup_location+2	# load powerup type
 	jal draw_powerup
 	pop_stack($ra)
 	jr $ra
 
-# drop powerup at random location	
+# drop random powerup at random location	
+# 2 types: 1 = repair, 2 = shield
 drop_powerup:
 	# get random X coord
 	li $v0, 42	
@@ -693,7 +736,12 @@ drop_powerup:
 	syscall
 	sb $a0, powerup_location	# store X
 	sb $zero, powerup_location+1	# store Y
-	li $t0, 1
+	# get random type
+	li $v0, 42	
+	li $a0, 0	# always use 1st random instance
+	li $a1, 2	# range [0,1]
+	syscall
+	addi $t0, $a0, 1	# powerup type [0,1] -> [1,2]
 	sb $t0, powerup_location+2	# store type
 	jr $ra
 	
