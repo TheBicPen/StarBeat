@@ -17,8 +17,8 @@
 #
 # Which approved features have been implemented for milestone 4?
 # (See the assignment handout for the list of additional features)
-# 1. Music loop
-# 2. (fill in the feature, if any)
+# 1. Music loop	(approved by Moshe)
+# 2. Smooth graphics - the whole framebuffer is not redrawn each frame - only parts that have changed are redrawn
 # 3. (fill in the feature, if any)
 #... (add more if necessary)
 #
@@ -39,28 +39,29 @@
 .eqv 	FRAME_BUFFER	0x10008000
 .eqv 	INPUT_BUFFER	0xffff0000
 
+# sounds
 .eqv	AUDIO_DURATION	200	# length of a single note in milliseconds
 .eqv	INSTRUMENT	81	# MIDI instrument to play notes with
 .eqv	AUDIO_VOLUME	100
-
-# not used. see frame-delay below. TODO: use this for realtime note implementation
-#.eqv	SLEEP_AFTER_NOTE	180	# time between notes/frames
-
 # Use frame-based delay for notes - realtime syscalls are expensive
 .eqv	FRAME_DELAY	20	# sleep between  - 50fps
 .eqv	FRAMES_PER_NOTE	5	# How many frames there are per note - delay should be ~100ms
 
+# ong-specific info
 .eqv	SONG1_LENGTH	64	# number of notes in song1
 
+# gameplay settings
 .eqv	OBJECT_SPEED	3
+.eqv 	MAX_HEALTH	3
 
+# colours
 .eqv	SHIP_COLOUR1	0x0000bb
 .eqv	SHIP_COLOUR2	0x888888
 #.eqv	SHIP_COLOUR3	0xff9900
-
 .eqv	ENEMY_COLOUR1	0x555555
 .eqv	ENEMY_COLOUR2	0x777777
 .eqv	ENEMY_COLOUR3	0x444444
+.eqv	HP_COLOUR	0xff0000
 
 
 .data
@@ -68,8 +69,8 @@
 # store the pitch only. 0 indicates no note played
 song1:			.byte  	59, 54, 47, 54, 54, 49, 0, 49, 55, 50, 43, 50, 60, 55, 48, 55, 59, 0, 59, 0, 54, 0, 54, 0, 55, 0, 55, 0, 60, 0, 60, 0, 59, 54, 47, 54, 54, 49, 0, 49, 55, 50, 43, 50, 60, 55, 48, 55, 59, 59, 59, 59, 58, 58, 58, 58, 57, 57, 57, 57, 58, 58, 58, 58
 # generated with [3*(x % 8)+4 if x > 0 else 0 for x in above list]
-song1_objects:		.byte	13, 22, 25, 22, 22, 7,  0,  7, 25, 10, 13, 10, 16, 25, 4, 25, 13,  0, 13, 0, 22, 0, 22, 0, 25, 0, 25, 0, 16, 0, 16, 0, 13, 22, 25, 22, 22,  7, 0,  7, 25, 10, 13, 10, 16, 25,  4, 25, 13, 13, 13, 13, 10, 10, 10, 10,  7,  7,  7,  7, 10, 10, 10, 10
-# generated with [x%4 for x in above list]
+song1_objects:		.byte	13, 22, 25, 22, 22, 7,  0,  7, 25, 10, 13, 10, 16, 25, 4, 25, 13,  0, 13, 0, 22, 0, 22, 0, 25, 0, 25, 0, 16, 0, 16, 0, 13, 22, 25, 22, 22,  7, 0,  7, 25, 10, 13, 10, 16, 25,  4, 25, 19, 15,  9,  5,  2,  6,  10,  14,  7,  7,  7,  7, 12, 10,  8,  6
+# make sure that all objects that aren't on empty notes have a value of 1, 2, or 3
 song1_object_type:	.byte	1,  2,  1,  2,  2,  3,  0,  3,  1,  2,  1,  2,  3,  1, 3,  1,  1,  0,  1, 0,  2, 0,  2, 0,  1, 0,  1, 0,  3, 0,  3, 0,  1,  2,  1,  2,  2,  3, 0,  3,  1,  2,  1,  2,  3,  1,  3,  1,  1,  1,  1,  1,  2,  2,  2,  2,  3,  3,  3,  3,  2,  2,  2,  2
 object_locations:	.byte	0:32	# up to 8 objects on screen, each with padding to allow indexing by shifting, x,y coordinates, and obj type
 ship_location: 		.byte	0:4	# x,y coordinates of ship and 2 bytes of padding
@@ -121,15 +122,11 @@ ship_location: 		.byte	0:4	# x,y coordinates of ship and 2 bytes of padding
 
 ## Saved registers for main:
 # s0: music note index
-# s1: frame count
-# s4: reserved for functions (listed below)
-# s5: reserved for functions (listed below)
+# s1: frames since last note
+
+# s5: ship health
 # s6: ship X coordinate
 # s7: ship Y coordinate
-
-# Functions that may use s4:
-# - handle_input: saves return address
-# Functions that may use s5:
 
 main:
 	# test
@@ -143,7 +140,8 @@ main:
 	sw $t3, 128($t0)	# paint the first unit on the second row blue. Why +128?
 	
 	jal clear_screen
-	li $s6, 10		# init ship X 
+	li $s5, MAX_HEALTH	# Init max health
+	li $s6, 14		# init ship X 
 	li $s7, 40		# init ship Y
 
 	# draw ship at initial position
@@ -162,7 +160,11 @@ loop:
 	bne $t8, 1, loop_music
 	lw $a0, 4($t9) 			# this assumes $t9 is set to 0xfff0000 from before
 	jal handle_input
-	
+	# draw ship at possibly updated coordinates
+	move $a0, $s6		# move x into param 1
+	move $a1, $s7		# move y into param 2
+	move $a2, $zero		# move False into param 3: undraw
+	jal draw_ship
 
 
 loop_music:		
@@ -188,7 +190,11 @@ loop_empty_note:
 loop_end:
 	# do miscellaneous end-of-loop tasks
 	
-	jal move_objects	# Move objects downwards and remove finished ones
+	jal move_objects	# Move objects downwards, remove finished ones, check collisions
+	# this could be considered bad design but I just don't want to loop over the game objects 3 times in 3 different functions
+	
+	jal draw_hp		# draw HP on screen
+	blez $s5, game_over	# check for game over
 	jal pause 		# pause until next frame
 	addi $s1, $s1, 1	# increment frame counter
 	j loop			# keep looping
@@ -197,6 +203,30 @@ end:	li $v0, 10 		# terminate the program gracefully
 	syscall
 
 
+game_over:
+	j end
+
+######## Functions - call these with jal
+
+# Draw HP at the top of the screen
+# Called from main so ship HP is in $s5
+draw_hp:
+	sll $t0, $s5, 3		# shift current HP twice for word, once for 1-pixel gap
+	addi $t0, $t0, 132	# draw on 2nd line: 132=(32+1)*4
+	li $t2, MAX_HEALTH	# init iterator for undraw loop
+	sll $t2, $t2, 3		# shift max HP twice for word, once for 1-pixel gap
+	addi $t2, $t2, 132	# draw on 2nd line: 132=(32+1)*4
+	li $t3, 0x000000
+	li $t1, HP_COLOUR
+draw_hp_undraw_loop:		# TODO: use a single loop and change draw colour instead of overdrawing twice per frame
+	sw $t3, FRAME_BUFFER($t2)	# undraw pixels
+	addi $t2, $t2, -8	# move 2 pixels left
+	bgt $t2, 128, draw_hp_undraw_loop
+draw_hp_loop:
+	sw $t1, FRAME_BUFFER($t0)	# draw 
+	addi $t0, $t0, -8	# move 2 pixels left
+	bgt $t0, 128, draw_hp_loop
+	jr $ra
 
 # pause between notes.
 pause:
@@ -213,7 +243,7 @@ handle_input:
 	beq $a0, 0x73, ship_move_down		# ASCII code of 's'
 	beq $a0, 0x77, ship_move_up		# ASCII code of 'w'
 	beq $a0, 0x64, ship_move_right		# ASCII code of 'd'
-	
+	jr $ra					# Else, ignore input
 ship_move_left:
 	blez $s6, handle_input_return	# if ship at left edge, pass
 	push_stack ($ra)	# save return address pointer
@@ -222,15 +252,9 @@ ship_move_left:
 	move $a1, $s7		# move y into param 2
 	move $a2, $s6		# move True into param 3: undraw
 	jal draw_ship
-	# draw ship at new position
 	addi $s6, $s6, -1	# update global coords
-	move $a0, $s6		# move updated x into param 1
-	move $a1, $s7		# move y back into param 2
-	move $a2, $zero		# move False into param 3: undraw
-	jal draw_ship
 	pop_stack ($ra)
 	jr $ra
-	
 ship_move_right:
 	bge $s6, 29, handle_input_return	# if ship at right edge, pass
 	push_stack ($ra)	# save return address pointer
@@ -239,15 +263,9 @@ ship_move_right:
 	move $a1, $s7		# move y into param 2
 	li $a2, 1		# move True into param 3: undraw
 	jal draw_ship
-	# draw ship at new position
 	addi $s6, $s6, 1	# update global coords
-	move $a0, $s6		# move updated x into param 1
-	move $a1, $s7		# move y back into param 2
-	move $a2, $zero		# move False into param 3: undraw
-	jal draw_ship
 	pop_stack ($ra)
 	jr $ra
-	
 ship_move_down:
 	bge $s7, 62, handle_input_return	# if ship at lower edge, pass
 	push_stack ($ra)	# save return address pointer
@@ -256,15 +274,9 @@ ship_move_down:
 	move $a1, $s7		# move y into param 2
 	li $a2, 1		# move True into param 3: undraw
 	jal draw_ship
-	# draw ship at new position
 	addi $s7, $s7, 1	# update global coords
-	move $a0, $s6		# move x coord back to $a0
-	move $a1, $s7		# move updated y into param 2
-	move $a2, $zero		# move False into param 3: undraw
-	jal draw_ship
 	pop_stack ($ra)
 	jr $ra
-	
 ship_move_up:
 	blez $s7, handle_input_return	# if ship at upper edge, pass
 	push_stack ($ra)	# save return address pointer
@@ -273,23 +285,13 @@ ship_move_up:
 	move $a1, $s7		# move y into param 2
 	li $a2, 1		# move True into param 3: undraw
 	jal draw_ship
-	# draw ship at new position
 	addi $s7, $s7, -1	# update global coords
-	move $a0, $s6		# move x coord back to $a0
-	move $a1, $s7		# move updated y into param 2
-	move $a2, $zero		# move False into param 3: undraw
-	jal draw_ship
 	pop_stack ($ra)
 	jr $ra
-	
 handle_input_return:
 	jr $ra
-
-######## Functions - call these with jal
-
-
-
-
+	
+# Clear the screen. No params.
 clear_screen:
 	li $t1, SCREEN_WIDTH
 	mul $t1, $t1, SCREEN_HEIGHT
@@ -408,8 +410,36 @@ play_single_note:
 	syscall
 	jr $ra			# return
 	
-
+# Assume this gets called by main loop, ie. ship x,y in $s6,$s7
+# Modify ship current health, ie. $s5
+# params: $s5-$s7, $a0,$a1,$a2: obj x,y,type
+check_collision:
+# Calculate the Manhattan distance (one-norm) between x1,y1 and x2,y2 ($a0,$a1, $s6,$s7) and store in $v0
+distance:
+	sub $v0, $a0, $s6
+	abs $v0, $v0
+	sub $v1, $a1, $s7
+	abs $v1, $v1
+	add $v0, $v0, $v1
+	beq $a2, 1, check_collision_enemy1
+	beq $a2, 2, check_collision_enemy2
+	beq $a2, 3, check_collision_enemy3
+	j end	# error
+check_collision_enemy1:
+	blt $v0, 3, decrement_hp
+	jr $ra
+check_collision_enemy2:
+	blt $v0, 4, decrement_hp
+	jr $ra
+check_collision_enemy3:
+	blt $v0, 5, decrement_hp
+	jr $ra
+decrement_hp:
+	addi $s5, $s5, -1
+	jr $ra
+	
 # move objects downwards and remove them once off-screen
+# On collision, decrement HP
 move_objects:
 	push_stack($ra)
 	push_stack($s0)
@@ -426,8 +456,14 @@ move_objects_loop:
 	lb $s0, object_locations($s3)	# load x coord
 	move $a0, $s0			# move X coord to parameter
 
-	li $a2, 1			# undraw first
 	beq $s2, 0, move_objects_loop_continue	# if obj type == 0, do nothing
+	# check collisions
+	move $a0, $s0	# load obj X
+	move $a1, $s1	# load obj Y
+	move $a2, $s2	# load obj type
+	jal check_collision		# ship HP,X,Y in $s5-$s7
+
+	li $a2, 1			# undraw first
 	beq $s2, 1, move_object_enemy_1
 	beq $s2, 2, move_object_enemy_2
 	beq $s2, 3, move_object_enemy_3
