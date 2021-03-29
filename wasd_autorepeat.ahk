@@ -22,4 +22,3 @@ spam:
     }
  }
 return
-

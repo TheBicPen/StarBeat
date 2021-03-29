@@ -48,7 +48,7 @@
 				# This uses a realtime clock so lag might cause the music to sound wrong, and no lag might cause overlaps if set too high
 				# The implementation of this in MARS only allows 1 sound at a time (overlaps cause weird audio glitches)
 .eqv	INSTRUMENT	81	# MIDI instrument to play notes with
-.eqv	AUDIO_VOLUME	100
+.eqv	AUDIO_VOLUME	60
 # Use frame-based delay for notes - realtime syscalls are expensive
 .eqv	FRAME_DELAY	20	# millisecond delay between frames, ie. inverse of framerate. Currently 50 FPS
 .eqv	FRAMES_PER_NOTE	10	# How many frames there are per note - delay should be ~100ms
@@ -584,9 +584,10 @@ on_collision_return:
 # increments s5 on collision with repair powerup
 # sets s4 to full shield on collision with shield powerup
 check_powerup_collision:
+	lb $a2, powerup_location+2	# load type
+	beqz $a2, check_powerup_collision_none	# if type == 0, ignore collisions
 	lb $a0, powerup_location	# load X
 	lb $a1, powerup_location+1	# load Y
-	lb $a2, powerup_location+2	# load type
 	# Manhattan distance
 	addi $t2, $s6, 1	# shift center of ship to the right for better detection
 				# ship 'center' is normally at top left
