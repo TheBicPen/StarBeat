@@ -26,7 +26,8 @@
 #... (add more if necessary)
 #
 # Link to video demonstration for final submission:
-# -(insert YouTube / MyMedia / other URL here). Make sure we can view it!
+# -MyMedia: https://play.library.utoronto.ca/194efd659faf5892174ad55d197708f2
+# -Youtube mirror: https://youtu.be/AY7EIu0PGSw
 #
 # Are you OK with us sharing the video with people outside course staff?
 # - yes, and please share this project github link as well! https://github.com/TheBicPen/CSCB58-Project (email me if I forget to make this public)
@@ -35,6 +36,7 @@
 # - Make sure your volume isn't too high before starting the game. There is sound.
 # - Restart MARS before running the code. I'm using the version with the crash fixed, and it gets 1/3 the expected framerate on subsequent executions after running the program once. 
 #	It's not very fun to play a laggy game. The first time should run buttery smooth
+# - I highly recommend running the AHK script from the Github repo (also available as an executable) to make the input smoother
 ######################################################################
 
 ######## Constants
@@ -61,7 +63,7 @@
 .eqv	OBJECT_SPEED	2		# speed of objects to avoid
 .eqv	POWERUP_OBJECT_SPEED	1	# speed of objects to collect
 .eqv 	MAX_HEALTH	7
-.eqv	SHIELD_FRAMES	200		# duration of sheild in frames	
+.eqv	SHIELD_FRAMES	200		# duration of shield in frames	
 
 # colours
 .eqv	SHIP_COLOUR1	0x0000bb
@@ -214,7 +216,7 @@ loop_empty_note:
 loop_end:
 	# do miscellaneous end-of-loop tasks
 	jal move_objects	# Move objects downwards, remove finished ones, check collisions
-				# this could be considered bad design but I just don't want to loop over the game objects 3 times in 3 different functions
+				# This could be considered bad design but I don't want to loop over the game objects 3 times in 3 different functions
 	jal move_powerup
 	jal check_powerup_collision	
 	jal draw_hp		# draw HP on screen
