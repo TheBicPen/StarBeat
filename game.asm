@@ -23,7 +23,7 @@
 # 1. Music loop	(approved by Moshe)
 # 2. Smooth graphics - the whole framebuffer is not redrawn each frame - only parts that have changed are redrawn
 # 3. Powerups - shield and repair
-#... (add more if necessary)
+# 4. Song/Level selection
 #
 # Link to video demonstration for final submission:
 # -MyMedia: https://play.library.utoronto.ca/194efd659faf5892174ad55d197708f2
@@ -46,23 +46,32 @@
 .eqv 	INPUT_BUFFER	0xffff0000
 
 # sounds
-.eqv	AUDIO_DURATION	300	# Length of a single note in milliseconds. Adjust this based on FRAMES_PER_NOTE and vice-versa.
-				# This uses a realtime clock so lag might cause the music to sound wrong, and no lag might cause overlaps if set too high
-				# The implementation of this in MARS only allows 1 sound at a time (overlaps cause weird audio glitches)
 .eqv	INSTRUMENT	81	# MIDI instrument to play notes with
 .eqv	AUDIO_VOLUME	60
 # Use frame-based delay for notes - realtime syscalls are expensive
 .eqv	FRAME_DELAY	20	# millisecond delay between frames, ie. inverse of framerate. Currently 50 FPS
-.eqv	FRAMES_PER_NOTE	10	# How many frames there are per note - delay should be ~100ms
 .eqv	SHIP_EXPLODE_ANIMATION_DELAY	500
 
 # song-specific info
-.eqv	SONG1_LENGTH	64	# number of notes in song1
+.eqv	SONG1_LENGTH	64		# number of notes in song1
+.eqv 	SONG1_NOTE_DURATION	300	# duration of note in ms
+.eqv	SONG1_FRAMES_PER_NOTE	8	# How many frames there are per note. This uses a realtime clock so lag might cause the music to sound wrong, 
+					# and no lag might cause overlaps if set too high
+					# The implementation of this in MARS only allows 1 sound at a time (overlaps cause weird audio glitches)
+
+.eqv	SONG2_LENGTH	362		# number of notes in song2
+.eqv 	SONG2_NOTE_DURATION	200	# duration of note in ms
+.eqv	SONG2_FRAMES_PER_NOTE	5	# How many frames there are per note.
+
+.eqv	SONG3_LENGTH	354		# number of notes in song2
+.eqv 	SONG3_NOTE_DURATION	120	# duration of note in ms
+.eqv	SONG3_FRAMES_PER_NOTE	5	# How many frames there are per note.
 
 # gameplay settings
 .eqv	OBJECT_SPEED	2		# speed of objects to avoid
 .eqv	POWERUP_OBJECT_SPEED	1	# speed of objects to collect
 .eqv 	MAX_HEALTH	7
+.eqv 	INITIAL_HEALTH	5		# should be less than or equal to max health
 .eqv	SHIELD_FRAMES	200		# duration of shield in frames	
 
 # colours
@@ -81,15 +90,38 @@
 .eqv	SHIP_EXPLODE3	0xfca50f
 
 .data
-# Short song loop - simplified version of https://onlinesequencer.net/634591
+# Short song loop - adapted from https://onlinesequencer.net/634591
 # store the pitch only. 0 indicates no note played
 song1:			.byte  	59, 54, 47, 54, 54, 49, 0, 49, 55, 50, 43, 50, 60, 55, 48, 55, 59, 0, 59, 0, 54, 0, 54, 0, 55, 0, 55, 0, 60, 0, 60, 0, 59, 54, 47, 54, 54, 49, 0, 49, 55, 50, 43, 50, 60, 55, 48, 55, 59, 59, 59, 59, 58, 58, 58, 58, 57, 57, 57, 57, 58, 58, 58, 58
 # generated with [3*(x % 8)+4 if x > 0 else 0 for x in above list]
 song1_objects:		.byte	13, 22, 25, 22, 22, 7,  0,  7, 25, 10, 13, 10, 16, 25, 4, 25, 13,  0, 13, 0, 22, 0, 22, 0, 25, 0, 25, 0, 16, 0, 16, 0, 13, 22, 25, 22, 22,  7, 0,  7, 25, 10, 13, 10, 16, 25,  4, 25, 19, 15,  9,  5,  2,  6,  10,  14,  7,  7,  7,  7, 12, 10,  8,  6
 # make sure that all objects on non-empty notes have a value of 1, 2, or 3
 song1_object_type:	.byte	1,  2,  1,  2,  2,  3,  0,  3,  1,  2,  1,  2,  3,  1, 3,  1,  1,  0,  1, 0,  2, 0,  2, 0,  1, 0,  1, 0,  3, 0,  3, 0,  1,  2,  1,  2,  2,  3, 0,  3,  1,  2,  1,  2,  3,  1,  3,  1,  1,  1,  1,  1,  2,  2,  2,  2,  3,  3,  3,  3,  2,  2,  2,  2
+
+# flowering night - adapted from https://onlinesequencer.net/642497
+song2:			.byte	71, 0, 79, 0, 78, 79, 78, 0, 81, 0, 79, 0, 78, 79, 78, 74, 76, 0, 83, 0, 81, 83, 81, 83, 86, 0, 83, 0, 81, 0, 83, 0, 71, 0, 79, 0, 78, 79, 78, 0, 81, 0, 79, 0, 78, 79, 78, 74, 76, 0, 83, 0, 81, 83, 81, 83, 87, 0, 83, 0, 81, 0, 83, 0, 71, 0, 79, 0, 78, 79, 78, 0, 81, 0, 79, 0, 78, 79, 78, 74, 76, 0, 83, 0, 81, 83, 81, 83, 86, 0, 83, 0, 81, 0, 83, 0, 71, 0, 79, 0, 78, 79, 78, 0, 81, 0, 79, 0, 78, 79, 78, 74, 76, 0, 83, 0, 81, 83, 81, 83, 86, 0, 86, 0, 88, 0, 0, 72, 0, 80, 0, 79, 80, 79, 0, 82, 0, 80, 0, 79, 80, 79, 75, 77, 0, 84, 0, 82, 84, 82, 84, 87, 0, 84, 0, 82, 0, 84, 0, 72, 0, 80, 0, 79, 80, 79, 0, 82, 0, 80, 0, 79, 80, 79, 75, 77, 0, 84, 0, 82, 84, 82, 84, 88, 0, 84, 0, 82, 0, 84, 
+				0, 72, 0, 80, 0, 79, 80, 79, 0, 82, 0, 80, 0, 79, 80, 79, 75, 77, 0, 84, 0, 82, 84, 82, 84, 87, 0, 84, 0, 82, 0, 84, 0, 72, 0, 80, 0, 79, 80, 79, 0, 82, 0, 80, 0, 79, 80, 79, 75, 77, 0, 84, 0, 82, 84, 82, 84, 87, 0, 87, 0, 89, 0, 0, 79, 0, 74, 0, 82, 0, 74, 0, 81, 0, 74, 0, 79, 0, 74, 0, 78, 0, 74, 0, 86, 0, 74, 0, 81, 0, 74, 0, 78, 0, 74, 0, 79, 0, 74, 0, 82, 0, 74, 0, 81, 0, 74, 0, 79, 0, 74, 0, 78, 0, 74, 0, 86, 0, 74, 0, 78, 0, 0, 79, 0, 0, 74, 0, 82, 0, 74, 0, 81, 0, 74, 0, 79, 0, 78, 0, 0, 74, 0, 86, 0, 74, 0, 81, 0, 74, 0, 78, 0, 82, 0, 0, 79, 0, 82, 0, 84, 0, 0, 86, 0, 89, 0, 91, 0, 0, 0, 0
+				
+song2_objects:		.byte	25, 0, 25, 0, 22, 25, 22, 0, 7, 0, 25, 0, 22, 25, 22, 10, 16, 0, 13, 0, 7, 13, 7, 13, 22, 0, 13, 0, 7, 0, 13, 0, 25, 0, 25, 0, 22, 25, 22, 0, 7, 0, 25, 0, 22, 25, 22, 10, 16, 0, 13, 0, 7, 13, 7, 13, 25, 0, 13, 0, 7, 0, 13, 0, 25, 0, 25, 0, 22, 25, 22, 0, 7, 0, 25, 0, 22, 25, 22, 10, 16, 0, 13, 0, 7, 13, 7, 13, 22, 0, 13, 0, 7, 0, 13, 0, 25, 0, 25, 0, 22, 25, 22, 0, 7, 0, 25, 0, 22, 25, 22, 10, 16, 0, 13, 0, 7, 13, 7, 13, 22, 0, 22, 0, 4, 0, 0, 4, 0, 4, 0, 25, 4, 25, 0, 10, 0, 4, 0, 25, 4, 25, 13, 19, 0, 16, 0, 10, 16, 10, 16, 25, 0, 16, 0, 10, 0, 16, 0, 4, 0, 4, 0, 25, 4, 25, 0, 10, 0, 4, 0, 25, 4, 25, 13, 19, 0, 16, 0, 10, 16, 10, 16, 4, 0, 16, 0, 10, 0, 16, 0, 4, 0, 4, 0, 25, 4, 25, 
+				0, 10, 0, 4, 0, 25, 4, 25, 13, 19, 0, 16, 0, 10, 16, 10, 16, 25, 0, 16, 0, 10, 0, 16, 0, 4, 0, 4, 0, 25, 4, 25, 0, 10, 0, 4, 0, 25, 4, 25, 13, 19, 0, 16, 0, 10, 16, 10, 16, 25, 0, 25, 0, 7, 0, 0, 25, 0, 10, 0, 10, 0, 10, 0, 7, 0, 10, 0, 25, 0, 10, 0, 22, 0, 10, 0, 22, 0, 10, 0, 7, 0, 10, 0, 22, 0, 10, 0, 25, 0, 10, 0, 10, 0, 10, 0, 7, 0, 10, 0, 25, 0, 10, 0, 22, 0, 10, 0, 22, 0, 10, 0, 22, 0, 0, 25, 0, 0, 10, 0, 10, 0, 10, 0, 7, 0, 10, 0, 25, 0, 22, 0, 0, 10, 0, 22, 0, 10, 0, 7, 0, 10, 0, 22, 0, 10, 0, 0, 25, 0, 10, 0, 16, 0, 0, 22, 0, 7, 0, 13, 0, 0, 0, 0
+
+song2_object_type:	.byte	3, 0, 2, 0, 1, 2, 1, 0, 1, 0, 2, 0, 1, 2, 1, 3, 2, 0, 3, 0, 1, 3, 1, 3, 3, 0, 3, 0, 1, 0, 3, 0, 3, 0, 2, 0, 1, 2, 1, 0, 1, 0, 2, 0, 1, 2, 1, 3, 2, 0, 3, 0, 1, 3, 1, 3, 1, 0, 3, 0, 1, 0, 3, 0, 3, 0, 2, 0, 1, 2, 1, 0, 1, 0, 2, 0, 1, 2, 1, 3, 2, 0, 3, 0, 1, 3, 1, 3, 3, 0, 3, 0, 1, 0, 3, 0, 3, 0, 2, 0, 1, 2, 1, 0, 1, 0, 2, 0, 1, 2, 1, 3, 2, 0, 3, 0, 1, 3, 1, 3, 3, 0, 3, 0, 2, 0, 0, 1, 0, 3, 0, 2, 3, 2, 0, 2, 0, 3, 0, 2, 3, 2, 1, 3, 0, 1, 0, 2, 1, 2, 1, 1, 0, 1, 0, 2, 0, 1, 0, 1, 0, 3, 0, 2, 3, 2, 0, 2, 0, 3, 0, 2, 3, 2, 1, 3, 0, 1, 0, 2, 1, 2, 1, 2, 0,
+				1, 0, 2, 0, 1, 0, 1, 0, 3, 0, 2, 3, 2, 0, 2, 0, 3, 0, 2, 3, 2, 1, 3, 0, 1, 0, 2, 1, 2, 1, 1, 0, 1, 0, 2, 0, 1, 0, 1, 0, 3, 0, 2, 3, 2, 0, 2, 0, 3, 0, 2, 3, 2, 1, 3, 0, 1, 0, 2, 1, 2, 1, 1, 0, 1, 0, 3, 0, 0, 2, 0, 3, 0, 2, 0, 3, 0, 1, 0, 3, 0, 2, 0, 3, 0, 1, 0, 3, 0, 3, 0, 3, 0, 1, 0, 3, 0, 1, 0, 3, 0, 2, 0, 3, 0, 2, 0, 3, 0, 1, 0, 3, 0, 2, 0, 3, 0, 1, 0, 3, 0, 3, 0, 3, 0, 1, 0, 0, 2, 0, 0, 3, 0, 2, 0, 3, 0, 1, 0, 3, 0, 2, 0, 1, 0, 0, 3, 0, 3, 0, 3, 0, 1, 0, 3, 0, 1, 0, 2, 0, 0, 2, 0, 2, 0, 1, 0, 0, 3, 0, 3, 0, 2, 0, 0, 0, 0
+
+# KING - adapted from https://onlinesequencer.net/1943749
+song3:			.byte	84, 0, 0, 91, 0, 90, 0, 89, 0, 87, 0, 86, 0, 84, 0, 83, 0, 84, 0, 83, 0, 84, 0, 83, 0, 0, 0, 0, 84, 0, 0, 91, 0, 90, 0, 89, 0, 87, 0, 86, 0, 84, 0, 84, 0, 86, 0, 87, 0, 89, 0, 90, 0, 0, 91, 0, 84, 0, 0, 91, 0, 90, 0, 89, 0, 87, 0, 86, 0, 84, 0, 83, 0, 84, 0, 83, 0, 84, 0, 83, 0, 0, 0, 84, 0, 0, 91, 0, 90, 0, 89, 0, 87, 0, 86, 0, 84, 0, 84, 0, 86, 0, 87, 0, 89, 0, 90, 0, 0, 91, 0, 84, 0, 0, 91, 0, 90, 0, 89, 0, 87, 0, 86, 0, 84, 0, 83, 0, 84, 0, 83, 0, 84, 0, 79, 0, 0, 79, 0, 84, 0, 0, 79, 0, 79, 0, 0, 77, 0, 0, 75, 0, 80, 0, 0, 79, 0, 0, 75, 0, 0, 77, 0, 0, 77, 0, 70, 0, 70, 0, 0, 70, 0, 70, 0, 0, 67, 0, 70, 0, 72, 0, 0, 79, 0, 0, 84, 0, 0, 79, 0, 0, 87, 0, 0, 77, 0, 0, 77, 0, 80, 0, 0, 
+				79, 0, 0, 75, 0, 0, 77, 0, 0, 77, 0, 70, 0, 70, 0, 0, 70, 0, 70, 0, 0, 67, 0, 70, 0, 0, 72, 0, 0, 71, 0, 0, 79, 0, 80, 0, 79, 79, 75, 0, 79, 79, 80, 0, 79, 79, 75, 0, 79, 79, 82, 0, 79, 79, 80, 0, 79, 79, 82, 0, 79, 0, 79, 0, 80, 0, 79, 79, 75, 0, 79, 79, 80, 0, 79, 79, 75, 0, 79, 79, 79, 79, 79, 79, 77, 77, 75, 75, 74, 74, 70, 0, 79, 0, 80, 0, 79, 79, 75, 0, 79, 79, 80, 0, 79, 79, 75, 0, 79, 79, 82, 0, 79, 79, 80, 0, 79, 79, 82, 0, 75, 0, 79, 0, 80, 0, 79, 79, 75, 0, 79, 79, 80, 0, 79, 79, 80, 0, 83, 83, 0, 79, 79, 0, 83, 83, 0, 86, 86, 0, 86
+
+song3_objects:		.byte	14, 0, 0, 5, 0, 2, 0, 29, 0, 23, 0, 20, 0, 14, 0, 11, 0, 14, 0, 11, 0, 14, 0, 11, 0, 0, 0, 0, 14, 0, 0, 5, 0, 2, 0, 29, 0, 23, 0, 20, 0, 14, 0, 14, 0, 20, 0, 23, 0, 29, 0, 2, 0, 0, 5, 0, 14, 0, 0, 5, 0, 2, 0, 29, 0, 23, 0, 20, 0, 14, 0, 11, 0, 14, 0, 11, 0, 14, 0, 11, 0, 0, 0, 14, 0, 0, 5, 0, 2, 0, 29, 0, 23, 0, 20, 0, 14, 0, 14, 0, 20, 0, 23, 0, 29, 0, 2, 0, 0, 5, 0, 14, 0, 0, 5, 0, 2, 0, 29, 0, 23, 0, 20, 0, 14, 0, 11, 0, 14, 0, 11, 0, 14, 0, 29, 0, 0, 29, 0, 14, 0, 0, 29, 0, 29, 0, 0, 23, 0, 0, 17, 0, 2, 0, 0, 29, 0, 0, 17, 0, 0, 23, 0, 0, 23, 0, 2, 0, 2, 0, 0, 2, 0, 2, 0, 0, 23, 0, 2, 0, 8, 0, 0, 29, 0, 0, 14, 0, 0, 29, 0, 0, 23, 0, 0, 23, 0, 0, 23, 0, 2, 0, 0, 29, 0, 0, 17, 0, 0, 23, 
+				0, 0, 23, 0, 2, 0, 2, 0, 0, 2, 0, 2, 0, 0, 23, 0, 2, 0, 0, 8, 0, 0, 5, 0, 0, 29, 0, 2, 0, 29, 29, 17, 0, 29, 29, 2, 0, 29, 29, 17, 0, 29, 29, 8, 0, 29, 29, 2, 0, 29, 29, 8, 0, 29, 0, 29, 0, 2, 0, 29, 29, 17, 0, 29, 29, 2, 0, 29, 29, 17, 0, 29, 29, 29, 29, 29, 29, 23, 23, 17, 17, 14, 14, 2, 0, 29, 0, 2, 0, 29, 29, 17, 0, 29, 29, 2, 0, 29, 29, 17, 0, 29, 29, 8, 0, 29, 29, 2, 0, 29, 29, 8, 0, 17, 0, 29, 0, 2, 0, 29, 29, 17, 0, 29, 29, 2, 0, 29, 29, 2, 0, 11, 11, 0, 29, 29, 0, 11, 11, 0, 20, 20, 0, 20
+
+song3_object_type:	.byte	3, 0, 0, 1, 0, 3, 0, 2, 0, 3, 0, 2, 0, 3, 0, 2, 0, 3, 0, 2, 0, 3, 0, 2, 0, 0, 0, 0, 3, 0, 0, 1, 0, 3, 0, 2, 0, 3, 0, 2, 0, 3, 0, 3, 0, 2, 0, 3, 0, 2, 0, 3, 0, 0, 1, 0, 3, 0, 0, 1, 0, 3, 0, 2, 0, 3, 0, 2, 0, 3, 0, 2, 0, 3, 0, 2, 0, 3, 0, 2, 0, 0, 0, 3, 0, 0, 1, 0, 3, 0, 2, 0, 3, 0, 2, 0, 3, 0, 3, 0, 2, 0, 3, 0, 2, 0, 3, 0, 0, 1, 0, 3, 0, 0, 1, 0, 3, 0, 2, 0, 3, 0, 2, 0, 3, 0, 2, 0, 3, 0, 2, 0, 3, 0, 1, 0, 0, 1, 0, 3, 0, 0, 1, 0, 1, 0, 0, 2, 0, 0, 3, 0, 2, 0, 0, 1, 0, 0, 3, 0, 0, 2, 0, 0, 2, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 3, 0, 0, 1, 0, 0, 3, 0, 0, 1, 0, 0, 3, 0, 0, 2, 0, 0, 2, 0, 2, 0, 0, 1, 0, 0, 3, 0, 0, 2, 0, 0, 2, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 3, 0, 0,
+				2, 0, 0, 1, 0, 2, 0, 1, 1, 3, 0, 1, 1, 2, 0, 1, 1, 3, 0, 1, 1, 1, 0, 1, 1, 2, 0, 1, 1, 1, 0, 1, 0, 1, 0, 2, 0, 1, 1, 3, 0, 1, 1, 2, 0, 1, 1, 3, 0, 1, 1, 1, 1, 1, 1, 2, 2, 3, 3, 2, 2, 1, 0, 1, 0, 2, 0, 1, 1, 3, 0, 1, 1, 2, 0, 1, 1, 3, 0, 1, 1, 1, 0, 1, 1, 2, 0, 1, 1, 1, 0, 3, 0, 1, 0, 2, 0, 1, 1, 3, 0, 1, 1, 2, 0, 1, 1, 2, 0, 2, 2, 0, 1, 1, 0, 2, 2, 0, 2, 2, 0, 2
+
 object_locations:	.byte	0:32	# up to 8 objects on screen, each with padding to allow indexing by shifting, x,y coordinates, and obj type. eg. struct{_, X, Y, type}[8]
 powerup_location:	.byte	0:3	# stores x,y coords and type for a single powerup
+song_props:		.half	0:3	# store song-specific settings: length, note duration, frames per note, 
+song_addresses:		.word	0:3	# stores note array address, object array address, obj type array address
 
 game_over_screen_data:	.byte	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 224, 232, 207, 207, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 224, 240, 122, 137, 137, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 188, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 				0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 188, 188, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 122, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 188, 188, 0, 0, 0, 188, 232, 224, 188, 0, 0, 0, 0, 0, 0, 0, 0, 232, 237, 0, 224, 188, 0, 0, 0, 0, 122, 244, 188, 0, 0, 0, 188, 188, 0, 0, 188, 224, 122, 224, 188, 122, 232, 208, 115, 232, 122, 232, 122, 255, 237, 237, 244, 188, 188, 0, 0, 188, 232, 122, 232, 122, 0, 0, 0, 255, 0, 0, 188, 188, 0, 0, 0, 232, 122, 115, 128, 251, 122, 188, 224, 188, 0, 255, 224, 188, 188, 0, 255, 218, 88, 122, 237, 122, 0, 0, 0, 255, 0, 0, 231, 224, 0, 0, 255, 0, 0, 0, 188, 250, 122, 122, 244, 188, 0, 244, 160, 188, 188, 188, 188, 170, 255, 232, 232, 0, 0, 0, 0, 188, 240, 203, 244, 0, 0, 224, 224, 0, 0, 0, 224, 224, 0, 0, 255, 122, 0, 244, 122, 188, 188, 122, 232, 0, 0, 0, 122, 0, 0, 0, 0, 0, 224, 232, 0, 0, 0, 244, 203, 188, 232, 255, 231, 250, 0, 0, 232, 122, 0, 251, 0,
@@ -146,38 +178,38 @@ game_over_screen_data:	.byte	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
 ## Saved registers for main:
 # s0: music note index
 # s1: frames since last note
-
+# s2: note duration
+# s3: song length
 # s4: shield state
 # s5: ship health
 # s6: ship X coordinate
 # s7: ship Y coordinate
 
 main:
-	# test
-	#j test_instruments
-	li $t0, FRAME_BUFFER # $t0 stores the base address for display
-	li $t1, 0xff0000	# $t1 stores the red colour code
-	li $t2, 0x00ff00	# $t2 stores the green colour code
-	li $t3, 0x0000ff	# $t3 stores the blue colour code
-	sw $t1, 0($t0)		# paint the first (top-left) unit red. 
-	sw $t2, 4($t0)		# paint the second unit on the first row green. Why $t0+4?
-	sw $t3, 128($t0)	# paint the first unit on the second row blue. Why +128?
-	
+
 	jal clear_screen
-	li $s5, MAX_HEALTH	# Init max health
+	li $s0, 0 		# init note index iterator
+	li $s1, 0		# init number of frames since last note
+	#li $s2, 		# note duration
+	#li $s3, 		# song length
+	li $s4, 0		# init to no shield
+	li $s5, INITIAL_HEALTH	# Init ship health
 	li $s6, 14		# init ship X 
 	li $s7, 40		# init ship Y
-	li $s4, 0		# init to no shield
+	
+	# clear objects buffer
+	li $t0, 31
+clear_objects_loop:
+	sb $zero, object_locations($t0)
+	addi $t0, $t0, -1
+	bgez $t0, clear_objects_loop
 
 	# draw ship at initial position
 	move $a0, $s6
 	move $a1, $s7
 	move $a2, $zero
 	jal draw_ship
-	
-	li $s0, 0 		# init note index iterator
-	#li $s1, SONG1_LENGTH	# store song length constant
-	jal pause		# Pause to let MARS load the simulator
+
 loop:
 	# check for key input and handle it if necessary
 	li $t9, INPUT_BUFFER 
@@ -195,20 +227,20 @@ loop_no_input:
 
 loop_music:		
 	# Play notes of song
-	blt $s1, FRAMES_PER_NOTE, loop_end		# don't play note if enough frames haven't passed
+	blt $s1, SONG3_FRAMES_PER_NOTE, loop_end	# don't play note if enough frames haven't passed
 	move $s1, $zero					# reset frame counter
-	blt $s0, SONG1_LENGTH, loop_music_continue 	# play next note - don't reset to start 
+	blt $s0, SONG3_LENGTH, loop_music_continue 	# play next note - don't reset to start 
 	move $s0, $zero					# reset to start of song
 	jal drop_powerup				# drop powerup when song loops
 loop_music_continue:
 	# play a note from the song
-	lb $a0, song1($s0)		# load note
+	lb $a0, song3($s0)		# load note
 	beqz $a0, loop_empty_note
 	jal play_single_note		# play note if pitch is not 0
 	
 	# drop an object at each note
-	lb $a0, song1_objects($s0)		# load X coordinate
-	lb $a1, song1_object_type($s0)		# load obj type
+	lb $a0, song3_objects($s0)		# load X coordinate
+	lb $a1, song3_object_type($s0)		# load obj type
 	move $a2, $s0				# load note index
 	jal drop_object
 loop_empty_note:
@@ -355,7 +387,7 @@ game_over_screen:
 	mul $t1, $t1, SCREEN_HEIGHT
 	sll $t1, $t1, 2
 	move $t4, $zero
-	li $t0,  FRAME_BUFFER	# load start address into $t0
+	li $t0, FRAME_BUFFER		# load start address into $t0
 	addi $t1, $t1, FRAME_BUFFER	# load final address into $t1
 game_over_screen_loop:
 	#lbu $t2, game_over_screen_data($t4)	# end result looks blue
@@ -544,7 +576,7 @@ draw_powerup_draw:
 	
 # play single note (async). param $a0: pitch
 play_single_note:
-	li $a1, AUDIO_DURATION
+	li $a1, SONG1_NOTE_DURATION
 	li $a2, INSTRUMENT
 	li $a3, AUDIO_VOLUME
 	li $v0, 31		# play MIDI async
