@@ -92,6 +92,9 @@
 .eqv	SHIP_EXPLODE1	0xfc520f
 .eqv	SHIP_EXPLODE2	0xfc7e0f
 .eqv	SHIP_EXPLODE3	0xfca50f
+.eqv	SONG1_COLOUR	0x00ee00
+.eqv	SONG2_COLOUR	0xeeee00
+.eqv	SONG3_COLOUR	0xee0000
 
 .data
 # Short song loop - adapted from https://onlinesequencer.net/634591
@@ -212,6 +215,14 @@ song_select_screen_2:
 	la $a0, song_select_screen2
 song_select_screen_draw:
 	jal draw_screen
+	la $t1, FRAME_BUFFER
+	addi $t1, $t1, 4480	# 4 bytes * 32 px per line * 35 lines
+	li $t0, SONG1_COLOUR
+	sw $t0, 24($t1)
+	li $t0, SONG2_COLOUR
+	sw $t0, 64($t1)
+	li $t0, SONG3_COLOUR
+	sw $t0, 104($t1)
 song_select_loop:
 	# check for input
 	li $t9, INPUT_BUFFER 
