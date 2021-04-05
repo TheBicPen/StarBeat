@@ -3,23 +3,37 @@
 SendMode Input  ; Recommended for new scripts due to its superior speed and reliability.
 SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
 
+SetKeyDelay 0
 
 
-#usehook
+$w::
+  While GetKeyState("w","P")
+  {
+    Send, w
+    Sleep, 50
+  }
+Return
 
-hotkey, w, spam
-hotkey, a, spam
-hotkey, s, spam
-hotkey, d, spam
-return
+$a::
+  While GetKeyState("a","P")
+  {
+    Send, a
+    Sleep, 50
+  }
+Return
 
-spam:
- {
-   while getkeystate(a_thishotkey, "p")
-    {
-      SendInput, {%a_thishotkey%}
-      Sleep, 40
-    }
- }
-return
+$s::
+  While GetKeyState("s","P")
+  {
+    Send, s
+    Sleep, 50
+  }
+Return
 
+$d::
+  While GetKeyState("d","P")
+  {
+    Send, d
+    Sleep, 50
+  }
+Return
