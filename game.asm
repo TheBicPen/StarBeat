@@ -5,7 +5,7 @@
 # Student: Alexander Efimov, efimoval, 1004929759
 #
 # Bitmap Display Configuration:
-# -Unit width in pixels: 8 
+# -Unit width in pixels: 8
 # -Unit height in pixels: 8
 # -Display width in pixels: 256
 # -Display height in pixels: 512
@@ -20,14 +20,16 @@
 #
 # Which approved features have been implemented for milestone 4?
 # (See the assignment handout for the list of additional features)
-# 1. Music loop	(approved by Moshe)
+# 1. Level selection screen
 # 2. Smooth graphics - the whole framebuffer is not redrawn each frame - only parts that have changed are redrawn
 # 3. Powerups - shield and repair
-# 4. Song/Level selection
+# 4. Music loop
+#
 #
 # Link to video demonstration for final submission:
 # -MyMedia: https://play.library.utoronto.ca/b734d162fc5b0b7b2c82b195ec02acc3
 # -Youtube mirror: https://youtu.be/6tw44SpPW_A
+#
 #
 # Link to video of OLD VERSION:
 # -MyMedia: https://play.library.utoronto.ca/194efd659faf5892174ad55d197708f2 OLD VERSION
@@ -37,11 +39,12 @@
 # - yes, and please share this project github link as well! https://github.com/TheBicPen/CSCB58-Project (email me if I forget to make this public)
 #
 # Any additional information that the TA needs to know:
-# - Make sure your volume isn't too high before starting the game. There is sound.
+# - The green level has a safe zone on the right edge of the screen. No asteroids will fall there. The left edge is also almost safe.
+# - The game has sound.
+# - I highly recommend running the AHK script from the Github repo (also available as an executable) to make the input smoother - see the video for details
+#	Note that this issue is caused by the limitations of using a textbox for input, not a limitation of the game.
 # - Restart MARS before running the code. I'm using the version with the crash fixed, and it sometimes starts lagging after running the program a few times.
 #	It's not very fun to play a laggy game. (I've noticed the lag start when making changes to the source code as the program is running. I think it runs the old version and new one at the same time, causing lag)
-# - I highly recommend running the AHK script from the Github repo (also available as an executable) to make the input smoother
-#	Seriously, the delay between the initial key press and further key repeats is extremely annoying for games
 ######################################################################
 
 ######## Constants
@@ -77,8 +80,8 @@
 # gameplay settings
 .eqv	OBJECT_SPEED	2		# speed of objects to avoid
 .eqv	POWERUP_OBJECT_SPEED	1	# speed of objects to collect
-.eqv 	MAX_HEALTH	7
-.eqv 	INITIAL_HEALTH	5		# should be less than or equal to max health
+.eqv 	MAX_HEALTH	12
+.eqv 	INITIAL_HEALTH	10		# should be less than or equal to max health
 .eqv	SHIELD_FRAMES	200		# duration of shield in frames
 .eqv 	COLLISION_DAMAGE	1	# Damage per collision frame. Set to 0 for invincibility
 
@@ -781,7 +784,7 @@ check_powerup_collision:
 	j end	# error
 check_powerup_collision_repair:	
 	bge $s5, MAX_HEALTH, remove_powerup_from_screen	# no overheal
-	addi $s5, $s5, 1		# add 1 HP
+	addi $s5, $s5, 3	# add HP
 	j remove_powerup_from_screen
 check_powerup_collision_shield:
 	li $s4, SHIELD_FRAMES		# add full shield
