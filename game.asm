@@ -25,23 +25,20 @@
 # 3. Powerups - shield and repair
 # 4. Different enemy patterns
 # 5. Music loop
-#
+# 
 #
 # Link to video demonstration for final submission:
-# -MyMedia: https://play.library.utoronto.ca/b734d162fc5b0b7b2c82b195ec02acc3
-# -Youtube mirror: https://youtu.be/6tw44SpPW_A
+# -MyMedia: https://play.library.utoronto.ca/fb0f069a74379dd29aed6e409c1c1a98
+# -Youtube mirror: https://youtu.be/m_Hyqk5NpM8
 #
-#
-# Link to video of OLD VERSION:
-# -MyMedia: https://play.library.utoronto.ca/194efd659faf5892174ad55d197708f2 OLD VERSION
-# -Youtube mirror: https://youtu.be/AY7EIu0PGSw OLD VERSION
 #
 # Are you OK with us sharing the video with people outside course staff?
 # - yes, and please share this project github link as well! https://github.com/TheBicPen/CSCB58-Project (email me if I forget to make this public)
 #
 # Any additional information that the TA needs to know:
-# - The green level has safe zones on the edges of the screen. No asteroids will fall there.
+# - The green level has a safe zone on the right edge of the screen. No asteroids will fall there. The left edge is almost safe.
 # - The game has sound.
+# - You can increase your starting health and/or remove collision damage by editing the constants under line 90
 # - Change the key repeat delay (On Windows) to short and the repeat rate to fast in order to control the ship better
 # - Restart MARS before running the code. I'm using the version with the crash fixed, and it sometimes starts lagging after running the program a few times.
 ######################################################################
@@ -77,20 +74,20 @@
 .eqv 	SONG2_NOTE_DURATION	300	# duration of note in ms
 .eqv	SONG2_FRAMES_PER_NOTE	5	# How many frames there are per note.
 
-.eqv	SONG3_LENGTH	354		# number of notes in song2
+.eqv	SONG3_LENGTH	354		# number of notes in song3
 .eqv 	SONG3_NOTE_DURATION	250	# duration of note in ms
 .eqv	SONG3_FRAMES_PER_NOTE	5	# How many frames there are per note.
 
 	# stage 4 isn't a song at all
-.eqv	SONG4_LENGTH	32		# number of notes in song2
+.eqv	SONG4_LENGTH	32		# number of notes in song4
 .eqv 	SONG4_NOTE_DURATION	500	# duration of note in ms
 .eqv	SONG4_FRAMES_PER_NOTE	10	# How many frames there are per note.
 
 # gameplay settings
 .eqv	OBJECT_SPEED	2		# speed of objects to avoid
 .eqv	POWERUP_OBJECT_SPEED	1	# speed of objects to collect
-.eqv 	MAX_HEALTH	10
-.eqv 	INITIAL_HEALTH	7		# should be less than or equal to max health
+.eqv 	MAX_HEALTH	12
+.eqv 	INITIAL_HEALTH	9		# should be less than or equal to max health
 .eqv	SHIELD_FRAMES	200		# duration of shield in frames
 .eqv 	COLLISION_DAMAGE	1	# Damage per collision frame. Set to 0 for invincibility
 
@@ -115,7 +112,7 @@
 
 .data
 # Short song loop - adapted from https://onlinesequencer.net/634591
-# store the pitch only. 0 indicates no note played
+# store the pitch only. 0 indicates no note played. -1 means drop an object on the note but don't play the sound.
 song1:			.byte  	59, 54, 47, 54, 54, 49, 0, 49, 55, 50, 43, 50, 60, 55, 48, 55, 59, 0, 59, 0, 54, 0, 54, 0, 55, 0, 55, 0, 60, 0, 60, 0, 59, 54, 47, 54, 54, 49, 0, 49, 55, 50, 43, 50, 60, 55, 48, 55, 59, 59, 59, 59, 58, 58, 58, 58, 57, 57, 57, 57, 58, 58, 58, 58
 
 # For debugging purposes, the edges of the screen are safe since 3 < values < 26. Generated with [3*(x % 8)+4 if x > 0 else 0 for x in above list]
@@ -143,9 +140,11 @@ song3_objects:		.byte	13, 0, 0, 4, 0, 1, 0, 28, 0, 22, 0, 19, 0, 13, 0, 10, 0, 1
 
 song3_object_type:	.byte	3, 0, 0, 1, 0, 3, 0, 2, 0, 3, 0, 2, 0, 3, 0, 2, 0, 3, 0, 2, 0, 3, 0, 2, 0, 0, 0, 0, 3, 0, 0, 1, 0, 3, 0, 2, 0, 3, 0, 2, 0, 3, 0, 3, 0, 2, 0, 3, 0, 2, 0, 3, 0, 0, 1, 0, 3, 0, 0, 1, 0, 3, 0, 2, 0, 3, 0, 2, 0, 3, 0, 2, 0, 3, 0, 2, 0, 3, 0, 2, 0, 0, 0, 3, 0, 0, 1, 0, 3, 0, 2, 0, 3, 0, 2, 0, 3, 0, 3, 0, 2, 0, 3, 0, 2, 0, 3, 0, 0, 1, 0, 3, 0, 0, 1, 0, 3, 0, 2, 0, 3, 0, 2, 0, 3, 0, 2, 0, 3, 0, 2, 0, 3, 0, 1, 0, 0, 1, 0, 3, 0, 0, 1, 0, 1, 0, 0, 2, 0, 0, 3, 0, 2, 0, 0, 1, 0, 0, 3, 0, 0, 2, 0, 0, 2, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 3, 0, 0, 1, 0, 0, 3, 0, 0, 1, 0, 0, 3, 0, 0, 2, 0, 0, 2, 0, 2, 0, 0, 1, 0, 0, 3, 0, 0, 2, 0, 0, 2, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 3, 0, 0,
 				2, 0, 0, 1, 0, 2, 0, 1, 1, 3, 0, 1, 1, 2, 0, 1, 1, 3, 0, 1, 1, 1, 0, 1, 1, 2, 0, 1, 1, 1, 0, 1, 0, 1, 0, 2, 0, 1, 1, 3, 0, 1, 1, 2, 0, 1, 1, 3, 0, 1, 1, 1, 1, 1, 1, 2, 2, 3, 3, 2, 2, 1, 0, 1, 0, 2, 0, 1, 1, 3, 0, 1, 1, 2, 0, 1, 1, 3, 0, 1, 1, 1, 0, 1, 1, 2, 0, 1, 1, 1, 0, 3, 0, 1, 0, 2, 0, 1, 1, 3, 0, 1, 1, 2, 0, 1, 1, 2, 0, 2, 2, 0, 1, 1, 0, 2, 2, 0, 2, 2, 0, 2
-
+# no music played on stage 4
 song4:			.byte	-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1
+# all random enemy locations
 song4_objects:		.byte	-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1
+# bounsy enemies
 song4_object_type:	.byte	 4, 5, 4, 5, 4, 5, 4, 5, 4, 5, 4, 5, 4, 5, 4, 5, 4, 5, 4, 5, 4, 5, 4, 5, 4, 5, 4, 5, 4, 5, 4, 5
 
 object_locations:	.byte	0:32	# up to 8 objects on screen, each with padding to allow indexing by shifting, x,y coordinates, and obj type. eg. struct{_, X, Y, type}[8]
@@ -790,11 +789,7 @@ play_single_note:
 check_collision:
 # Calculate the Manhattan distance (one-norm) between x1,y1 and x2,y2 ($a0,$a1, $s6,$s7) and store in $v0
 distance:
-	addi $t2, $s6, -1	# shift center of ship to the left for better detection
-				# Ship center is at top left, and we measure the distance from that to the top left of enemy objects
-				# Shifting the ship left makes detection of objects larger than the ship more accurate.
-	
-	sub $v0, $a0, $t2
+	sub $v0, $a0, $s6
 	abs $v0, $v0
 	sub $v1, $a1, $s7
 	abs $v1, $v1
@@ -1051,33 +1046,12 @@ drop_object_not_random:
 	addi $t1, $t1, 1		# move to obj type location
 	sb $t0, object_locations($t1)	# store obj type
 	li $a2, 0			# draw, not undraw
-	push_stack($ra)
-	beq $t0, 1, drop_object_enemy_1
-	beq $t0, 2, drop_object_enemy_2
-	beq $t0, 3, drop_object_enemy_3
-	beq $t0, 4, drop_object_enemy_4
-	beq $t0, 5, drop_object_enemy_5
-	j end
-drop_object_enemy_1:
-	jal draw_enemy1
-	pop_stack($ra)
-	jr $ra
-drop_object_enemy_2:
-	jal draw_enemy2
-	pop_stack($ra)
-	jr $ra
-drop_object_enemy_3:
-	jal draw_enemy3
-	pop_stack($ra)
-	jr $ra
-drop_object_enemy_4:
-	jal draw_enemy4
-	pop_stack($ra)
-	jr $ra
-drop_object_enemy_5:
-	jal draw_enemy5
-	pop_stack($ra)
-	jr $ra
+	beq $t0, 1, draw_enemy1		# no need to jump twice - we can simply branch
+	beq $t0, 2, draw_enemy2
+	beq $t0, 3, draw_enemy3
+	beq $t0, 4, draw_enemy4
+	beq $t0, 5, draw_enemy5
+	j end	# error
 	
 # test 1 note of all supported MIDI instruments
 test_instruments:
