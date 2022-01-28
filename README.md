@@ -1,4 +1,4 @@
-# CSCB58-Project
+# StarBeat
 
 A shoot-em-up game written entirely in MIPS assembly. 
 
@@ -32,7 +32,7 @@ Open a bitmap display window (`Tools -> Bitmap Display`) with the following sett
 
 Open a keyboard input window: `Tools -> Keyboard and Display MMIO Simulator`
 
-Highly recommended: run the AHK script (also available as an executable) to use quick inputs. Otherwise, Windows adds a delay to repeating keystrokes in text boxes.
+Highly recommended: run the AHK script (also available as an executable in the "Releases" section) to use quick inputs. Otherwise, Windows adds a delay to repeating keystrokes in text boxes.
 You can adjust the delay in the system settings, but you cannot set it to 0 through the Windows 10 GUI. For this reason, use the script.
 
 Assemble and run the game, making sure to keep the simulation speed at maximum.
